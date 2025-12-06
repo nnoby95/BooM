@@ -1,0 +1,481 @@
+/**
+ * TW Controller - Reusable Components
+ * Buttons, inputs, tabs, modals, and other UI components
+ */
+
+/* ==================== BUTTONS ==================== */
+
+.btn {
+    display: inline-block;
+    padding: 6px 16px;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    border: 2px solid;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    background-size: contain;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Button Variants */
+.btn-primary,
+.btn.btn-primary {
+    background: linear-gradient(to bottom, var(--tw-btn-green), #527a1a);
+    background-image: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/index/button.png');
+    background-repeat: repeat-x;
+    border-color: var(--tw-btn-green-border);
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(to bottom, var(--tw-btn-green-hover), #6a9b22);
+}
+
+.btn-danger,
+.btn.btn-danger {
+    background: linear-gradient(to bottom, var(--tw-btn-red), #6b0000);
+    border-color: #5a0000;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(to bottom, var(--tw-btn-red-hover), #850000);
+}
+
+.btn-warning {
+    background: linear-gradient(to bottom, var(--status-warning), #e89c3a);
+    border-color: #d48d2a;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(to bottom, #f5b963, #e89c3a);
+}
+
+.btn-brown {
+    background: linear-gradient(to bottom, var(--tw-btn-brown), #4a3526);
+    border-color: var(--tw-border-dark);
+    color: var(--tw-text-light);
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.btn-brown:hover {
+    background: linear-gradient(to bottom, #6d5340, #4a3526);
+}
+
+/* Button Sizes */
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 10px;
+}
+
+.btn-lg {
+    padding: 10px 24px;
+    font-size: 13px;
+}
+
+/* Button Block */
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+/* ==================== FORMS ==================== */
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: var(--spacing-xs);
+    color: var(--tw-text-dark);
+}
+
+.form-group small {
+    display: block;
+    margin-top: var(--spacing-xs);
+    color: #666;
+    font-size: 10px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 11px;
+    border: 1px solid var(--tw-border-medium);
+    border-radius: var(--radius-sm);
+    background: var(--tw-bg-input);
+    color: var(--tw-text-dark);
+    transition: border-color var(--transition-fast);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--tw-btn-green);
+    box-shadow: 0 0 0 2px rgba(93, 126, 30, 0.2);
+}
+
+.form-control:disabled {
+    background: #e0e0e0;
+    cursor: not-allowed;
+}
+
+select.form-control {
+    cursor: pointer;
+}
+
+select.form-control[multiple] {
+    height: auto;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Form Row (side-by-side inputs) */
+.form-row {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+/* Checkbox and Radio */
+input[type="checkbox"],
+input[type="radio"] {
+    margin-right: var(--spacing-xs);
+    cursor: pointer;
+}
+
+/* ==================== TABS ==================== */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--tw-border-medium);
+}
+
+.tab-button {
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: bold;
+    background: var(--tw-bg-light);
+    border: 2px solid var(--tw-border-medium);
+    border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    cursor: pointer;
+    color: var(--tw-text-dark);
+    transition: all var(--transition-fast);
+    position: relative;
+    top: 2px;
+}
+
+.tab-button:hover {
+    background: var(--tw-bg-header);
+}
+
+.tab-button.active {
+    background: var(--tw-bg-header);
+    border-color: var(--tw-border-gold);
+    color: var(--tw-text-header);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ==================== CARDS ==================== */
+
+.card {
+    background: var(--tw-bg-light) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/popup/content_background.png');
+    background-repeat: repeat;
+    border: 2px solid var(--tw-border-medium);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/screen/tableheader_bg3.png');
+    background-repeat: repeat-x;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--tw-border-gold);
+    font-weight: bold;
+    color: var(--tw-text-header);
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.card-body {
+    padding: var(--spacing-md);
+}
+
+.card-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--tw-border-light);
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 10px;
+    color: #666;
+}
+
+/* ==================== MODAL ==================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: var(--z-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn var(--transition-fast);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal {
+    background: var(--tw-bg-light) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/popup/content_background.png');
+    background-repeat: repeat;
+    border: 3px solid var(--tw-border-dark);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: auto;
+    z-index: var(--z-modal);
+    animation: slideDown var(--transition-normal);
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/screen/tableheader_bg3.png');
+    background-repeat: repeat-x;
+    padding: var(--spacing-md);
+    border-bottom: 2px solid var(--tw-border-gold);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--tw-text-header);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--tw-btn-red);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-footer {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--tw-border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* ==================== TABLES ==================== */
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.table thead {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/screen/tableheader_bg3.png');
+    background-repeat: repeat-x;
+}
+
+.table th {
+    padding: var(--spacing-sm);
+    text-align: left;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+    border-bottom: 2px solid var(--tw-border-gold);
+}
+
+.table td {
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid var(--tw-border-light);
+}
+
+.table tbody tr:nth-child(odd) {
+    background: var(--tw-bg-row-odd);
+}
+
+.table tbody tr:nth-child(even) {
+    background: var(--tw-bg-row-even);
+}
+
+.table tbody tr:hover {
+    background: #ffe4a0;
+}
+
+/* ==================== BADGES ==================== */
+
+.badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: var(--radius-sm);
+    background: var(--tw-bg-medium);
+    color: var(--tw-text-light);
+}
+
+.badge-success {
+    background: var(--status-online);
+}
+
+.badge-danger {
+    background: var(--status-danger);
+}
+
+.badge-warning {
+    background: var(--status-warning);
+}
+
+.badge-info {
+    background: var(--status-busy);
+}
+
+/* ==================== TOOLTIPS ==================== */
+
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 10px;
+    background: var(--tw-bg-dark);
+    color: var(--tw-text-light);
+    font-size: 10px;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+
+[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--tw-bg-dark);
+    z-index: 1000;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        font-size: 10px;
+        padding: 6px 12px;
+    }
+
+    .modal {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .btn {
+        padding: 8px 12px;
+        font-size: 10px;
+    }
+}

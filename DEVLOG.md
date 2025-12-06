@@ -1,0 +1,503 @@
+# Development Log
+
+## Completed Tasks
+- [2025-12-04] Project initialized - Created DEVLOG.md structure
+- [2025-12-04] Phase 1 Foundation - Server infrastructure complete
+  - Created server directory structure (routes, state, utils, public)
+  - Initialized npm and installed express, ws
+  - Implemented server/utils/logger.js - logging utility with debug/info/warn/error levels
+  - Implemented server/state/accounts.js - in-memory state management for connected accounts
+  - Implemented server/websocket.js - WebSocket connection handler with authentication
+  - Implemented server/routes/api.js - REST API endpoints for accounts, alerts, commands
+  - Implemented server/index.js - Express server with WebSocket integration
+  - Created basic dashboard (index.html, styles.css, app.js) with account listing and alerts
+  - Server tested and running successfully on port 3000
+  - Created phase1_completed.md for context restoration
+- [2025-12-04] Phase 2 Data Flow - Userscript complete
+  - Created userscript/tw-agent.user.js with Tampermonkey headers
+  - Implemented WebSocket connection layer with auto-reconnect
+  - Implemented registration with API key authentication
+  - Implemented all scrapers: resources, troops, buildings, incomings, outgoings, queues
+  - Implemented periodic reporting with random jitter (60s ± 10s)
+  - Implemented message handlers for commands (stubbed for Phase 3)
+  - Added visual connection status indicator
+  - Ready for testing
+- [2025-12-04] HTTPS/WSS Security Update
+  - Generated self-signed SSL certificates (cert.pem, key.pem)
+  - Upgraded server from HTTP to HTTPS
+  - Upgraded WebSocket from ws:// to wss:// (secure WebSocket)
+  - Fixed Mixed Content security error (HTTPS pages require wss://)
+- [2025-12-04] VPS Connectivity Configuration
+  - Identified VPS connectivity issue (3 VPS with 10 accounts each need to connect)
+  - Updated userscript to use public IP (91.165.174.36) instead of private IP (192.168.2.235)
+  - Added @connect directive for public IP in userscript
+  - Upgraded userscript to version 1.0.5
+  - Documented port forwarding requirement for router
+- [2025-12-04] Linode Deployment Complete
+  - Deployed server to Linode VPS (172.236.201.97)
+  - Installed Node.js 20.19.6 and npm 10.8.2
+  - Uploaded all server files to /root/tw-controller
+  - Installed dependencies (Express 5.2.1, ws 8.18.3)
+  - Started server with PM2 for auto-restart
+  - Updated userscript to version 1.0.6 with Linode IP (wss://172.236.201.97:3000/ws)
+- [2025-12-04] Phase 3 - Command Execution & Safety Systems
+  - Implemented CommandQueue system (server/state/commandQueue.js)
+    - ONE command executes globally at a time across ALL accounts
+    - 5-15 second random delays between commands
+    - 30-second per-account cooldowns
+  - Updated command routes to use queue (server/routes/commands.js)
+  - Added anti-detection timing system to userscript
+    - Account-specific timing fingerprints (unique per account)
+    - Human-like typing simulation with variable speed
+    - Fatigue simulation (slower actions over time)
+    - Occasional "thinking pauses" (5% chance)
+  - Added Hungarian language support (klanhaboru.hu)
+    - Bilingual DOM selectors for buildings, units, buttons
+    - Language detection and fallback logic
+  - Updated userscript to version 1.0.9
+  - Deployed Phase 3 to Linode successfully
+  - Installed uuid dependency on server
+  - Verified queue endpoints working
+- [2025-12-05] Phase 4 - Templates System (COMPLETE)
+  - Implemented Template Manager (server/state/templates.js)
+    - Full CRUD operations for building and recruitment templates
+    - Sequential build order parser with MINES shorthand expansion
+    - Default templates created (Alap falu - 37 steps, Offenzív csapat)
+    - JSON persistence in data/templates.json
+  - Implemented Template Executor (server/services/templateExecutor.js)
+    - Step-by-step template execution with progress tracking
+    - Building prerequisite validation (barracks requires main 3, etc.)
+    - Resource and cost estimation
+    - Auto-storage upgrade when needed cost > 95% capacity
+    - Auto-farm upgrade when population near max
+    - Progress tracking per account with buildingTemplateStep
+  - Added WebSocket handlers for templates (server/websocket.js)
+    - getTemplates - Load all templates
+    - createTemplate, updateTemplate, deleteTemplate, duplicateTemplate
+    - executeTemplate - Execute template on account
+    - previewTemplate - Preview next step
+    - stopTemplateExecution - Cancel execution
+  - Implemented Template Manager UI (public/js/templates.js)
+    - Building template CRUD interface
+    - Recruitment template CRUD interface
+    - Template editor with validation
+    - Real-time WebSocket updates
+  - Integrated templates into Dashboard (public/index.html, public/js/app.js)
+    - New "Sablonok" tab for template management
+    - Bulk Operations integration with template execution
+    - Account multi-select for bulk operations
+    - Auto-storage and auto-farm toggle options
+  - Fixed userscript registration (v1.0.14)
+    - Changed game_data access from window to unsafeWindow
+    - Added @grant unsafeWindow directive
+    - Accounts now registering successfully
+  - Deployed Phase 4 to Linode successfully
+  - Template system tested and ready for use
+- [2025-12-05] Phase 2 - Account Display (COMPLETE)
+  - Implemented TW Theme CSS system (public/css/)
+    - variables.css - TW color palette, CSS variables, icon URLs
+    - tw-theme.css - Base TW styling with textures and backgrounds
+    - components.css - Reusable buttons, inputs, tabs, modals, tables
+    - cards.css - Account card and detail panel specific styling
+  - Implemented Component Architecture (public/js/components/)
+    - Component.js - Base component class with lifecycle methods
+    - AccountCard.js - Account card component with TW styling
+    - DetailPanel.js - Sliding sidebar panel (500px width)
+  - Updated Dashboard Layout (public/index.html, public/js/app.js)
+    - Account cards grid with responsive breakpoints
+    - Account card click handler to open detail panel
+    - Favorite toggle functionality
+    - Real-time card updates on resource changes
+  - Account Card Features
+    - TW gold header with account name and status
+    - Resource bars with progress indicators
+    - Building queue display with countdown
+    - Recruitment queue display
+    - Incoming attack alerts with countdown
+    - Last update timestamp
+  - Detail Panel Features
+    - Village information section
+    - Resources with detailed progress bars and production rates
+    - Troops grid with all unit types and counts
+    - Buildings grid with levels and build queue
+    - Recruitment queue by building type
+    - Incoming/outgoing commands display
+    - Notes section (ready for future implementation)
+    - Action buttons (Build, Attack, Support, Recruit)
+  - Deployed Phase 2 to Linode successfully
+  - 3 accounts currently connected and displaying properly
+- [2025-12-05] Phase 3 - Individual Action Modals (COMPLETE)
+  - Implemented Modal Base Component (public/js/components/Modal.js)
+    - Reusable modal with TW styling
+    - Overlay with click-to-close functionality
+    - Header, body, footer structure
+    - Error and loading state management
+    - Clean animation (fade in/out)
+  - Implemented BuildModal (public/js/components/BuildModal.js)
+    - Building selection grid with 16 buildings
+    - Current level display on each building card
+    - Level input (1-10 levels)
+    - Building icons from TW CDN
+    - Integration with /api/commands/build endpoint
+  - Implemented AttackModal (public/js/components/AttackModal.js)
+    - Dual-purpose modal (attack or support)
+    - Coordinate input with validation
+    - Troop selection grid (12 unit types)
+    - Available troop count display
+    - Quick actions (select all, clear all)
+    - Integration with /api/commands/send-troops endpoint
+  - Implemented RecruitModal (public/js/components/RecruitModal.js)
+    - Building-specific tabs (Barracks, Stable, Garage, Academy)
+    - Units grouped by building type
+    - Building level display in tabs
+    - Disabled tabs for unbuilt buildings
+    - Integration with /api/commands/recruit endpoint
+  - Updated DetailPanel Action Buttons
+    - Build button opens BuildModal
+    - Attack button opens AttackModal (attack mode)
+    - Support button opens AttackModal (support mode)
+    - Recruit button opens RecruitModal
+    - All modals send commands to API with error handling
+  - Deployed Phase 3 to Linode successfully
+  - Interactive modals now fully functional
+- [2025-12-05] Phase 5 - Alerts, Logs, Settings (COMPLETE)
+  - Implemented AlertsTab Component (public/js/components/AlertsTab.js)
+    - Incoming attacks section with priority color coding
+    - Red (🔴) for attacks < 10 minutes
+    - Yellow (🟡) for attacks 10min-1hr
+    - Green (🟢) for attacks > 1hr
+    - Attack card details (target, source, size, countdown)
+    - Action buttons (View account, Send support, Acknowledge)
+    - Events log section for recent activities
+    - Auto-updating countdowns every second
+  - Implemented LogsTab Component (public/js/components/LogsTab.js)
+    - Filter checkboxes (All, Commands, Errors, Connection, Alerts)
+    - Account dropdown filter
+    - Date filter (Today, Yesterday, Week, All)
+    - Search box for keyword filtering
+    - Log entries with timestamp, icon, account, message
+    - Pagination (20 logs per page)
+    - Clear all logs functionality
+    - Keeps last 5000 log entries
+  - Implemented SettingsTab Component (public/js/components/SettingsTab.js)
+    - Connection section (server URL, API key, status, ping)
+    - Timing (Anti-Detection) settings
+      - Global delay min/max (default 5-15s)
+      - Account cooldown (default 30s)
+      - Reporting frequency (default 60s)
+    - Alerts settings
+      - Sound enabled toggle
+      - Browser notifications toggle
+      - Flashing title toggle
+      - Alert sound selection (TW Beep, Bell, Alarm)
+      - Volume slider (0-100%)
+    - Display settings
+      - Theme selection (TW, Dark, Light)
+      - Card size (Small, Normal, Large)
+      - Sort by dropdown
+      - Favorites first toggle
+      - Hide offline accounts toggle
+    - Templates management buttons
+    - Data export/import/clear functionality
+    - Settings persistence via localStorage
+    - Success message notifications
+  - Updated Dashboard Integration (index.html, app.js)
+    - Added 3 new tab buttons (Riasztások, Napló, Beállítások)
+    - Added tab containers for Alerts, Logs, Settings
+    - Initialized tab components in app.js
+    - Added global window references for cross-component access
+    - Created addLog() helper function
+    - Integrated AlertsTab updates on account data changes
+    - Tab components render on initialization
+  - Added 3 new script includes to index.html
+  - Deployed Phase 5 to Linode successfully
+- [2025-12-05] Userscript Fix - Improved Troop Scraping (v1.0.15)
+  - Fixed scrapeTroops() function - was only checking game_data
+  - Added 4-method fallback system for troop detection:
+    - Method 1: game_data.village.units (fastest, primary)
+    - Method 2: DOM scraping from troop tables (#units_home, .units-table)
+    - Method 3: Overview widget scraping (#show_units)
+    - Method 4: Inline script parsing for embedded JSON data
+  - Added ID-based, class-based, and image-based detection
+  - Supports all 12 unit types (spear, sword, axe, archer, spy, light, marcher, heavy, ram, catapult, knight, snob)
+  - Comprehensive logging for debugging
+  - Updated to version 1.0.15
+  - Deployed to Linode server
+- [2025-12-05] Userscript Fix - Send Troops Coordinate Input (v1.0.16)
+  - Fixed fillTroopForm() - coordinates were not being entered
+  - Added 6 different selector variations for coordinate inputs (supports both EN and HU)
+  - Added input[name="koordinatak_x/y"] for Hungarian version
+  - Added debug logging to identify coordinate inputs
+  - Added logging for all inputs on page if coordinates not found
+  - Added verification logging after coordinates are set
+  - Clears existing values before typing new coordinates
+  - Updated to version 1.0.16
+  - Deployed to Linode server
+- [2025-12-05] Userscript Fix - Hungarian Coordinate Input Format (v1.0.17) ✅
+  - **USER CONFIRMED**: v1.0.16 still couldn't enter coordinates
+  - **ROOT CAUSE**: Hungarian version (klanhaboru.hu) uses SINGLE input field for coordinates
+    - Input structure: `<input type="text" name="input" class="target-input-field" placeholder="123|456">`
+    - Expected format: "525|515" (single string with pipe separator)
+    - English version uses separate inputx/inputy fields
+  - **FIX**: Completely rewrote fillTroopForm() coordinate logic
+    - FIRST: Detect single coordinate input (Hungarian version)
+      - `input[name="input"].target-input-field`
+      - `.target-input-field`
+      - `input[placeholder*="|"]`
+    - Type full coordinate string "X|Y" into single input
+    - FALLBACK: Use separate X/Y inputs (English version)
+  - Added comprehensive logging for both input methods
+  - Updated to version 1.0.17
+  - Deployed to Linode server
+  - **USER CONFIRMED**: Coordinate input now working! ✅
+- [2025-12-05] Userscript Fix - Rally Point Error Handling (v1.0.18) ✅
+  - **USER REQUEST**: Detect rally point errors and STOP execution (no loops)
+  - **ERROR MESSAGES DETECTED** (Hungarian):
+    - "Csak a saját klánod tagjainak küldhetsz erősítést" - Can only send to own tribe members
+    - "Nem áll rendelkezésre elegendő egység" - Not enough units available
+    - "Kérünk adj meg célfalut" - Please specify target village
+  - **FIX**: Added `checkRallyPointErrors()` function
+    - Checks for error_box, .error, .info_box.error containers
+    - Detects both Hungarian and English error messages
+    - Checks visibility (offsetParent !== null)
+    - Fallback: scans entire page body for error text
+  - **ERROR HANDLING INTEGRATION**:
+    - Check BEFORE filling form (detect previous errors)
+    - Check AFTER filling form (validation errors)
+    - Check AFTER clicking submit (server-side errors)
+    - Clear pending command on error (prevents loops)
+    - Send error message back to server
+  - **PREVENTS INFINITE LOOPS**: When error detected, script stops and reports error
+  - Updated to version 1.0.18
+  - Deployed to Linode server
+  - **READY FOR TESTING**: Script now handles errors gracefully
+- [2025-12-05] Userscript Fix - Recruitment Error Handling (v1.0.19) ✅
+  - **USER REQUEST**: Detect recruitment errors and STOP execution (no loops)
+  - **ERROR MESSAGE DETECTED** (Hungarian):
+    - "Nincs elég nyersanyag vagy elértél a népességi korlátot!" - Not enough resources or reached population limit
+    - "Nincs elég nyersanyag" - Not enough resources
+    - "elértél a népességi korlátot" - Reached population limit
+  - **FIX**: Added `checkRecruitmentErrors()` function
+    - Checks for error_box, .error, .info_box.error, .error-msg, .red containers
+    - Detects both Hungarian and English error messages
+    - Checks visibility (offsetParent !== null)
+    - Fallback: scans entire page body for error text
+  - **ERROR HANDLING INTEGRATION**:
+    - Check BEFORE filling form (detect previous errors)
+    - Check AFTER filling form (validation errors)
+    - Check AFTER clicking recruit button (server-side errors)
+    - Clear pending command on error (prevents loops)
+    - Send error message back to server
+  - **PREVENTS INFINITE LOOPS**: When error detected, script stops and reports error
+  - Updated to version 1.0.19
+  - Deployed to Linode server
+  - **READY FOR TESTING**: Script now handles recruitment errors gracefully
+- [2025-12-05] Userscript Fix - WebSocket Incoming/Outgoing Detection (v1.0.21) ✅
+  - **USER REPORT**: Outgoing support commands shown as "bejövő támadás" (incoming attack)
+  - **ROOT CAUSE**: WebSocket event handler treated ALL commands as incoming
+    - Lines 107-122: All "command" events forwarded as "incomingCommand"
+    - No distinction between attacks TO your village vs FROM your village
+    - Screenshot showed outgoing support marked as incoming attack
+  - **FIX**: Implemented proper incoming/outgoing distinction
+    - Added `forwardIncomingCommand()` - for attacks TO your village
+    - Added `forwardOutgoingCommand()` - for attacks FROM your village
+    - Event detection by name:
+      - `command/incoming`, `incoming`, `command_incoming` → incoming
+      - `command/sent`, `command/outgoing`, `outgoing`, `command_sent` → outgoing
+    - Event detection by target village ID:
+      - `targetVillageId === currentVillageId` → INCOMING (attack TO you)
+      - `originVillageId === currentVillageId` → OUTGOING (attack FROM you)
+    - Comprehensive logging for debugging
+  - **BENEFITS**:
+    - Real-time data from game's WebSocket (no DOM scraping needed)
+    - Accurate incoming vs outgoing classification
+    - Works on any page (doesn't require specific screen)
+    - Language-independent (same protocol for HU/EN)
+    - Captures all game events (resources, buildings, recruitment, commands)
+  - Updated to version 1.0.21
+  - Deployed to Linode server
+  - **READY FOR TESTING**: Dashboard should now only show TRUE incoming attacks
+- [2025-12-05] Userscript + Server Fix - DOM Scraper & Server Handler (v1.0.22) ✅
+  - **USER REPORT**: Problem persists after v1.0.21 - outgoing support still showing as incoming
+  - **ROOT CAUSE IDENTIFIED**: TWO separate bugs working together
+    - **BUG 1**: DOM scraper selector in `scrapeIncomings()` (line 918)
+      - Used selector: `'#incomings_table tr, .command-row'`
+      - `.command-row` matches BOTH incoming AND outgoing commands
+      - User's outgoing support had `class="command-row"` → was scraped as incoming
+    - **BUG 2**: Missing server handler for `outgoingCommand` events
+      - websocket.js switch statement had no case for `outgoingCommand`
+      - Outgoing events fell through to `default` case → logged as "Unknown"
+  - **DEBUG EVIDENCE**: Console showed BOTH logs simultaneously:
+    - `[TW-Agent] ⚔️ INCOMING ATTACK detected!` ← DOM scraper bug
+    - `[TW-Agent] 📤 OUTGOING COMMAND detected!` ← WebSocket working correctly
+  - **FIX 1**: Updated userscript DOM scraper (line 918)
+    - Changed from: `document.querySelectorAll('#incomings_table tr, .command-row')`
+    - Changed to: `document.querySelectorAll('#incomings_table tbody tr')`
+    - Now ONLY matches rows inside the incomings table
+  - **FIX 2**: Added server handler for outgoingCommand (websocket.js)
+    - Added case `outgoingCommand` in switch statement
+    - Created `handleOutgoingCommand()` function
+    - Logs outgoing commands without creating alerts or broadcasting
+    - Prevents "Unknown game event type" messages
+  - **RESULT**: Dashboard now uses ONLY WebSocket data for accurate incoming/outgoing detection
+  - Updated to version 1.0.22
+  - Deployed both userscript and server to Linode
+  - **READY FOR TESTING**: Outgoing commands should NO LONGER appear in incoming attacks
+- [2025-12-05] Userscript Cleanup - WebSocket-Only Command Detection (v1.0.23) ✅
+  - **USER FEEDBACK**: Console shows "Outgoings: 2" when there's only 1 outgoing support
+  - **ROOT CAUSE**: DOM scraper was duplicating commands that WebSocket already detected
+    - `scrapeIncomings()` at line 913 was parsing #incomings_table
+    - `scrapeOutgoings()` at line 934 was parsing command rows
+    - Both creating duplicate entries alongside WebSocket events
+  - **SOLUTION**: Complete removal of DOM command parsing
+    - **scrapeIncomings()**: Now only scrapes COUNTS from #incomings_amount and #supports_amount (for verification)
+    - **scrapeOutgoings()**: Completely removed - returns empty array
+    - WebSocket interception handles ALL command details (both incoming and outgoing)
+  - **BENEFITS**:
+    - No more duplicate outgoing commands
+    - No more incorrect type detection (support vs attack)
+    - Single source of truth: WebSocket events only
+    - Cleaner, more reliable command tracking
+    - Language-independent (WebSocket protocol is the same for all TW versions)
+  - **DOM COUNTS USED** (Hungarian TW):
+    - `<span id="incomings_amount">5</span>` - incoming attacks count
+    - `<span id="supports_amount">1</span>` - incoming supports count
+  - Updated to version 1.0.23
+  - Deployed to Linode server
+  - **RESULT**: Dashboard now shows ONLY WebSocket-detected commands (no duplicates, accurate types)
+
+- [2025-12-05] Village Effects/Bonuses Display (v1.0.24) ✅
+  - **USER REQUEST**: Display active village bonuses from `#show_effects` widget in DetailPanel
+  - **IMPLEMENTED**:
+    - **scrapeEffects()**: New function to scrape from `#show_effects` widget
+      - Parses `.village_overview_effect` rows
+      - Extracts icon, name, tooltip, and link status
+      - Handles both direct text and link text content
+    - **Data structure**:
+      ```js
+      {
+        name: "Vallásos" | "+6% Nyersanyag" | "Relikviák kijelölése most",
+        icon: "https://dshu.innogamescdn.com/.../church.webp",
+        tooltip: "Church protection tooltip",
+        hasLink: true/false
+      }
+      ```
+    - **DetailPanel.createEffectsSection()**: New section displaying bonuses
+      - Gold-themed styling (rgba(255, 215, 0))
+      - Shows effect icons (24x24px)
+      - Displays effect names in golden color (#d4af37)
+      - Link indicator (🔗) for actionable effects
+      - Tooltips on hover
+    - **Effects shown**:
+      - Church protection (Vallásos)
+      - Relic status/selection
+      - Flag bonuses (+6% resources, etc.)
+  - Updated to version 1.0.24
+  - Deployed to Linode server
+
+## Current State
+Phase 2, 3, 4 & 5 - Account Display + Modals + Templates + Alerts/Logs/Settings (COMPLETE AND DEPLOYED)
+- **Linode Server**: 172.236.201.97 (DEPLOYED AND RUNNING)
+- **SSH Access**: root@172.236.201.97 (password: 2Bn3T53TqNd1995)
+- **Server Status**: Running with PM2 (auto-restart enabled)
+- **IMPORTANT**: Code exists on TWO locations - keep them synchronized:
+  - Local: d:\TW\Multy\server
+  - Linode: /root/tw-controller (172.236.201.97)
+  - **ANY EDIT must be applied to BOTH locations**
+- **Userscript**: userscript/tw-agent.user.js (version 1.0.23)
+- **Current config**: wss://172.236.201.97:3000/ws
+- **Connected Accounts**: 3 (hu97_norbitheking, hu97_kupido98, hu97_error404)
+- **Architecture**: 3 VPS servers with 10 Chrome profiles each -> Linode server (single deployment)
+- **Safety Systems**: Command queue with global throttling and per-account cooldowns
+- **Template System**: READY - 1 building template, 1 recruitment template loaded
+- **UI System**: Full TW-themed dashboard with account cards and detail panel
+- **NEXT STEP**: Implement Phase 3 (Modals), Phase 5 (Bulk Operations Polish), Phase 6 (Alerts/Logs/Settings)
+- **Data flow pipeline**:
+  - Scraping: userscript -> WebSocket -> server -> REST API -> dashboard
+  - Commands: dashboard -> REST API -> Command Queue -> WebSocket -> userscript
+  - Templates: dashboard -> WebSocket -> Template Executor -> Command Queue -> userscript
+  - UI Updates: Real-time via WebSocket broadcasts
+
+## Known Issues & Solutions
+| Issue | Solution | Date |
+|-------|----------|------|
+| Express 5 wildcard route error | Removed catch-all route, static middleware handles it | 2025-12-04 |
+| Userscript not starting on klanhaboru.hu | Added @match directive for klanhaboru.hu domain | 2025-12-04 |
+| WebSocket connection blocked by proxy | Changed from localhost to 127.0.0.1, then to local IP | 2025-12-04 |
+| Windows Firewall blocking port 3000 | Added firewall rule via PowerShell (admin required) | 2025-12-04 |
+| Mixed Content: HTTPS page can't use ws:// | Generated SSL certs, upgraded to HTTPS/WSS (wss://) | 2025-12-04 |
+| VPS can't reach private IP (192.168.2.235) | Initially tried port forwarding, decided to deploy to Linode instead | 2025-12-04 |
+| Port forwarding not desired | Deploy to Linode server - single deployment, no router config needed | 2025-12-04 |
+| Command routes missing on Linode | Index.js missing commandRoutes import - uploaded corrected file | 2025-12-04 |
+| Module 'uuid' not found on Linode | Installed uuid dependency via npm install uuid | 2025-12-04 |
+| game_data not accessible in userscript | Changed window.game_data to unsafeWindow.game_data, added @grant unsafeWindow | 2025-12-05 |
+| accountState.save() not defined | Removed save() calls - account state is in-memory (Map), changes are automatic | 2025-12-05 |
+
+## TODO
+### Deployment Phase
+- [x] **CRITICAL**: Create Linode server (Ubuntu 22.04, smallest plan)
+- [x] Get Linode public IP address
+- [x] Upload server files to Linode (use package-for-deployment.bat or manual upload)
+- [x] Install Node.js on Linode (curl -fsSL https://deb.nodesource.com/setup_20.x | bash -)
+- [x] Install dependencies on Linode (npm install)
+- [x] Start server on Linode (npm start or pm2 start)
+- [x] Update userscript with Linode IP address (wss://LINODE_IP:3000/ws)
+- [ ] Check port 3000 on Linode firewall if needed (ufw status)
+- [ ] Install/update userscript on all VPS Chrome profiles (30 accounts)
+- [ ] Accept self-signed certificate in browser (navigate to https://172.236.201.97:3000)
+- [ ] Test VPS -> Linode server connectivity
+
+### Testing Phase
+- [ ] Test userscript on actual Tribal Wars page (manual testing required)
+- [ ] Verify data flow: userscript -> server -> dashboard
+- [ ] Fix any DOM scraper selectors if needed (varies by TW version)
+
+### Phase 3 - Command Execution (DEPLOYED)
+- [x] Implement CommandQueue system with global throttling
+- [x] Add anti-detection timing to userscript
+- [x] Implement sendTroops executor in userscript
+- [x] Implement buildBuilding executor in userscript
+- [x] Implement recruitTroops executor in userscript
+- [x] Add Hungarian language support to userscript
+- [x] Deploy Phase 3 to Linode
+- [x] Add command panel UI to dashboard
+- [ ] Test end-to-end: dashboard command -> userscript execution -> result
+
+### Phase 4 - Templates (COMPLETE)
+- [x] Build template parser (with MINES expansion)
+- [x] Implement BuildingTemplate manager UI
+- [x] Implement RecruitmentTemplate manager UI
+- [x] Build template executor service
+- [x] Add template progress tracking per account
+- [x] Integrate templates into Bulk Operations tab
+- [x] Add WebSocket handlers for all template operations
+- [x] Deploy Phase 4 to Linode
+- [x] Fix userscript registration issue (unsafeWindow)
+- [ ] Test template execution end-to-end with live accounts
+
+### Phase 2 - Account Display (COMPLETE)
+- [x] Create TW-themed CSS system (variables, theme, components, cards)
+- [x] Implement Component base class
+- [x] Implement AccountCard component with TW styling
+- [x] Implement DetailPanel component (account details sidebar)
+- [x] Update dashboard to use account cards grid
+- [x] Add responsive design for account cards
+- [x] Add TW textures and backgrounds
+- [x] Deploy Phase 2 to Linode
+
+### Phase 3 - Individual Action Modals (COMPLETE)
+- [x] Implement Modal base component
+- [x] Build Modal (building selection grid)
+- [x] Attack Modal (coordinate input, troop selection)
+- [x] Support Modal (coordinate input, troop selection) - Combined with Attack Modal
+- [x] Recruitment Modal (barracks/stable/garage sections)
+- [x] Wire modals to detail panel action buttons
+- [x] Deploy Phase 3 to Linode
+
+### Phase 5 - Alerts, Logs, Settings (COMPLETE)
+- [x] Implement AlertsTab with incoming attack display
+- [x] Add alert priority colors (red < 10min, yellow 10min-1hr, green > 1hr)
+- [x] Add sound alerts and browser notifications settings
+- [x] Build LogsTab with filtering and pagination
+- [x] Implement SettingsTab UI (connection, timing, alerts, display)
+- [x] Deploy Phase 5 to Linode

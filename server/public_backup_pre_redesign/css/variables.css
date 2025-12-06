@@ -1,0 +1,124 @@
+/**
+ * TW Controller - CSS Variables
+ * Tribal Wars color palette and design tokens
+ */
+
+:root {
+    /* TW Backgrounds */
+    --tw-bg-dark: #3e2415;           /* Dark wood brown */
+    --tw-bg-medium: #5d4330;         /* Medium wood */
+    --tw-bg-light: #f4e4bc;          /* Parchment/tan */
+    --tw-bg-header: #c1a264;         /* Gold header */
+    --tw-bg-input: #f8f4e8;          /* Light input bg */
+    --tw-bg-row-odd: #fff5da;        /* Table odd row */
+    --tw-bg-row-even: #f0e2be;       /* Table even row */
+
+    /* TW Borders */
+    --tw-border-dark: #2d1a0e;       /* Very dark brown */
+    --tw-border-medium: #5d4330;     /* Medium brown */
+    --tw-border-gold: #dca;          /* Gold accent */
+    --tw-border-light: #c9a96e;      /* Light brown */
+
+    /* TW Text */
+    --tw-text-dark: #3e2415;         /* Dark brown text */
+    --tw-text-light: #f4e4bc;        /* Light text on dark */
+    --tw-text-header: #542c0f;       /* Header text */
+    --tw-text-link: #0000cc;         /* Blue links */
+
+    /* TW Buttons */
+    --tw-btn-green: #5d7e1e;         /* Action buttons */
+    --tw-btn-green-hover: #6d9122;
+    --tw-btn-green-border: #3d5a0f;
+    --tw-btn-red: #8b0000;           /* Cancel/danger */
+    --tw-btn-red-hover: #a50000;
+    --tw-btn-brown: #5d4330;         /* Neutral */
+
+    /* Status Colors */
+    --status-online: #5cb85c;        /* Green dot */
+    --status-offline: #888888;       /* Gray dot */
+    --status-warning: #f0ad4e;       /* Orange */
+    --status-danger: #d9534f;        /* Red */
+    --status-busy: #5bc0de;          /* Blue */
+
+    /* Alert Priority Colors */
+    --alert-critical: #d9534f;       /* < 10 minutes */
+    --alert-warning: #f0ad4e;        /* 10min - 1hr */
+    --alert-normal: #5cb85c;         /* > 1hr */
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* Border Radius */
+    --radius-sm: 3px;
+    --radius-md: 5px;
+    --radius-lg: 8px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.4);
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+
+    /* Z-index layers */
+    --z-base: 1;
+    --z-dropdown: 100;
+    --z-modal: 1000;
+    --z-overlay: 999;
+    --z-detail-panel: 500;
+
+    /* Card dimensions */
+    --card-min-width: 280px;
+    --card-max-width: 350px;
+    --detail-panel-width: 500px;
+
+    /* TW CDN Base URL */
+    --tw-cdn: 'https://dshu.innogamescdn.com/asset/2a2f957f';
+}
+
+/* Resource Icon URLs */
+:root {
+    --icon-wood: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/holz.png');
+    --icon-clay: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/lehm.png');
+    --icon-iron: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/eisen.png');
+    --icon-population: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/face.png');
+    --icon-storage: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/storage.png');
+}
+
+/* Building Icon URLs */
+:root {
+    --icon-main: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/main.png');
+    --icon-barracks: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/barracks.png');
+    --icon-stable: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/stable.png');
+    --icon-garage: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/garage.png');
+    --icon-smith: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/smith.png');
+    --icon-market: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/market.png');
+    --icon-wood-building: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/wood.png');
+    --icon-stone: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/stone.png');
+    --icon-iron-building: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/iron.png');
+    --icon-farm: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/farm.png');
+    --icon-wall: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/buildings/wall.png');
+}
+
+/* Unit Icon URLs */
+:root {
+    --icon-spear: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_spear.png');
+    --icon-sword: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_sword.png');
+    --icon-axe: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_axe.png');
+    --icon-archer: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_archer.png');
+    --icon-spy: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_spy.png');
+    --icon-light: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_light.png');
+    --icon-marcher: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_marcher.png');
+    --icon-heavy: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_heavy.png');
+    --icon-ram: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_ram.png');
+    --icon-catapult: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_catapult.png');
+    --icon-knight: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_knight.png');
+    --icon-snob: url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/unit/unit_snob.png');
+}

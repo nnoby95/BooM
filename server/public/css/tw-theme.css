@@ -1,0 +1,372 @@
+/**
+ * TW Controller - Tribal Wars Theme
+ * Base styling with TW textures and backgrounds
+ */
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    font-size: 11px;
+    color: var(--tw-text-dark);
+    background: var(--tw-bg-dark) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/index/main_bg.jpg');
+    background-attachment: fixed;
+    background-size: cover;
+    line-height: 1.4;
+}
+
+/* Container */
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+}
+
+/* Header */
+header {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550);
+    border: 2px solid var(--tw-border-gold);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+}
+
+header h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+    margin-bottom: var(--spacing-sm);
+}
+
+#status {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-sm);
+    font-size: 12px;
+    color: var(--tw-text-header);
+}
+
+#status span {
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-sm);
+}
+
+/* Section Containers */
+.section {
+    background: var(--tw-bg-light) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/popup/content_background.png');
+    background-repeat: repeat;
+    border: 2px solid var(--tw-border-medium);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.section h2 {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--tw-border-light);
+}
+
+.section h3 {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Gold Header Style (for cards) */
+.tw-header {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/screen/tableheader_bg3.png');
+    background-repeat: repeat-x;
+    border-bottom: 1px solid var(--tw-border-gold);
+    color: var(--tw-text-header);
+    font-weight: bold;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Loading and No Data States */
+.loading,
+.no-data {
+    text-align: center;
+    color: var(--tw-text-dark);
+    padding: var(--spacing-lg);
+    font-style: italic;
+}
+
+/* Info Messages */
+.info {
+    background: #fffbe6;
+    border: 1px solid #ffecb3;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    color: #856404;
+}
+
+.info::before {
+    content: 'ℹ️ ';
+}
+
+/* Error Messages */
+.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    color: #721c24;
+}
+
+.error::before {
+    content: '❌ ';
+}
+
+/* Success Messages */
+.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    color: #155724;
+}
+
+.success::before {
+    content: '✅ ';
+}
+
+/* Scrollbar Styling (TW-like) */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--tw-bg-light);
+    border: 1px solid var(--tw-border-medium);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--tw-bg-medium);
+    border: 1px solid var(--tw-border-dark);
+    border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--tw-border-medium);
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-bold {
+    font-weight: bold;
+}
+
+.text-muted {
+    color: #888;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gap-sm {
+    gap: var(--spacing-sm);
+}
+
+.gap-md {
+    gap: var(--spacing-md);
+}
+
+.gap-lg {
+    gap: var(--spacing-lg);
+}
+
+/* Resource Icons (using background images) */
+.resource-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.resource-icon.wood {
+    background-image: var(--icon-wood);
+}
+
+.resource-icon.clay {
+    background-image: var(--icon-clay);
+}
+
+.resource-icon.iron {
+    background-image: var(--icon-iron);
+}
+
+.resource-icon.population {
+    background-image: var(--icon-population);
+}
+
+/* Building Icons */
+.building-icon {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Unit Icons */
+.unit-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    vertical-align: middle;
+}
+
+/* Status Dots */
+.status-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--status-online);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+.status-dot.offline {
+    background: var(--status-offline);
+}
+
+.status-dot.busy {
+    background: var(--status-busy);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Progress Bars */
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--tw-border-dark);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(to bottom, #7cb342, #5d9122);
+    transition: width var(--transition-normal);
+}
+
+.progress-bar-fill.wood {
+    background: linear-gradient(to bottom, #8d6e63, #5d4037);
+}
+
+.progress-bar-fill.clay {
+    background: linear-gradient(to bottom, #ff8a65, #d84315);
+}
+
+.progress-bar-fill.iron {
+    background: linear-gradient(to bottom, #90a4ae, #546e7a);
+}
+
+.progress-bar-fill.population {
+    background: linear-gradient(to bottom, #ffa726, #f57c00);
+}
+
+/* Countdown Timer */
+.countdown {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.countdown.critical {
+    color: var(--alert-critical);
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: var(--spacing-sm);
+    }
+
+    .section {
+        padding: var(--spacing-md);
+    }
+
+    header h1 {
+        font-size: 18px;
+    }
+
+    #status {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+}

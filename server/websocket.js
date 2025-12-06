@@ -1,0 +1,742 @@
+/**
+ * WebSocket connection handler for userscript agents
+ * Handles incoming messages from userscripts and routes commands
+ */
+
+const { WebSocketServer } = require('ws');
+const { accountState } = require('./state/accounts');
+const { logger } = require('./utils/logger');
+const templateManager = require('./state/templates');
+const templateExecutor = require('./services/templateExecutor');
+
+// Configuration
+const CONFIG = {
+  apiKey: process.env.TW_API_KEY || 'dev-secret-key-change-in-production',
+  pingInterval: 30000 // Ping clients every 30 seconds
+};
+
+/**
+ * Initialize WebSocket server
+ */
+function initWebSocket(server) {
+  const wss = new WebSocketServer({ server, path: '/ws' });
+
+  // Store wss instance for broadcasting to dashboards
+  accountState.wss = wss;
+
+  logger.info('WebSocket server initialized on /ws');
+
+  wss.on('connection', (ws, req) => {
+    const clientIp = req.socket.remoteAddress;
+    logger.info('New WebSocket connection', { ip: clientIp });
+
+    let accountId = null;
+    let authenticated = false;
+    let pingTimer = null;
+
+    // Start ping interval to keep connection alive
+    pingTimer = setInterval(() => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, CONFIG.pingInterval);
+
+    // Handle incoming messages
+    ws.on('message', (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        handleMessage(ws, message, { accountId, authenticated }, (newAccountId, newAuth) => {
+          accountId = newAccountId;
+          authenticated = newAuth;
+        });
+      } catch (error) {
+        logger.error('Failed to parse WebSocket message', { error: error.message });
+        ws.send(JSON.stringify({
+          type: 'error',
+          error: 'Invalid message format'
+        }));
+      }
+    });
+
+    // Handle connection close
+    ws.on('close', () => {
+      if (accountId) {
+        accountState.disconnect(accountId);
+      }
+      if (pingTimer) {
+        clearInterval(pingTimer);
+      }
+      logger.info('WebSocket connection closed', { accountId, ip: clientIp });
+    });
+
+    // Handle errors
+    ws.on('error', (error) => {
+      logger.error('WebSocket error', { accountId, error: error.message });
+    });
+  });
+
+  return wss;
+}
+
+/**
+ * Handle individual WebSocket messages
+ */
+function handleMessage(ws, message, context, updateContext) {
+  const { type } = message;
+
+  logger.debug('Received message', { type, accountId: context.accountId });
+
+  switch (type) {
+    case 'register':
+      handleRegister(ws, message, updateContext);
+      break;
+
+    case 'report':
+      handleReport(ws, message, context);
+      break;
+
+    case 'commandResult':
+      handleCommandResult(ws, message, context);
+      break;
+
+    case 'error':
+      handleError(ws, message, context);
+      break;
+
+    case 'pong':
+      handlePong(ws, message, context);
+      break;
+
+    case 'gameEvent':
+      handleGameEvent(ws, message, context);
+      break;
+
+    // Template operations (dashboard only)
+    case 'getTemplates':
+      handleGetTemplates(ws, message);
+      break;
+
+    case 'createTemplate':
+      handleCreateTemplate(ws, message);
+      break;
+
+    case 'updateTemplate':
+      handleUpdateTemplate(ws, message);
+      break;
+
+    case 'deleteTemplate':
+      handleDeleteTemplate(ws, message);
+      break;
+
+    case 'duplicateTemplate':
+      handleDuplicateTemplate(ws, message);
+      break;
+
+    // Template execution operations (dashboard only)
+    case 'executeTemplate':
+      handleExecuteTemplate(ws, message);
+      break;
+
+    case 'previewTemplate':
+      handlePreviewTemplate(ws, message);
+      break;
+
+    case 'stopTemplateExecution':
+      handleStopTemplateExecution(ws, message);
+      break;
+
+    default:
+      logger.warn('Unknown message type', { type, accountId: context.accountId });
+      ws.send(JSON.stringify({
+        type: 'error',
+        error: `Unknown message type: ${type}`
+      }));
+  }
+}
+
+/**
+ * Handle registration from userscript
+ */
+function handleRegister(ws, message, updateContext) {
+  const { apiKey, accountId, world, villageId, villageName, coords, playerName } = message;
+
+  // Validate API key
+  if (apiKey !== CONFIG.apiKey) {
+    logger.warn('Registration failed: invalid API key', { accountId });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: 'Invalid API key'
+    }));
+    ws.close();
+    return;
+  }
+
+  // Validate required fields
+  if (!accountId || !world || !villageId) {
+    logger.warn('Registration failed: missing required fields');
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: 'Missing required fields: accountId, world, villageId'
+    }));
+    return;
+  }
+
+  // Register the account
+  const sessionId = accountState.register(accountId, ws, {
+    world,
+    villageId,
+    villageName,
+    coords,
+    playerName
+  });
+
+  // Update context
+  updateContext(accountId, true);
+
+  // Send confirmation
+  ws.send(JSON.stringify({
+    type: 'registered',
+    sessionId
+  }));
+
+  logger.info('Account registered successfully', { accountId, sessionId, world });
+}
+
+/**
+ * Handle data report from userscript
+ */
+function handleReport(ws, message, context) {
+  if (!context.authenticated) {
+    logger.warn('Report rejected: not authenticated');
+    return;
+  }
+
+  const { accountId, data } = message;
+
+  if (accountId !== context.accountId) {
+    logger.warn('Report rejected: accountId mismatch', {
+      expected: context.accountId,
+      received: accountId
+    });
+    return;
+  }
+
+  // Update account data
+  const success = accountState.updateData(accountId, data);
+
+  if (!success) {
+    logger.error('Failed to update account data', { accountId });
+  }
+}
+
+/**
+ * Handle command execution result
+ */
+function handleCommandResult(ws, message, context) {
+  if (!context.authenticated) {
+    return;
+  }
+
+  const { actionId, success, message: resultMessage, details } = message;
+
+  logger.info('Command result received', {
+    accountId: context.accountId,
+    actionId,
+    success,
+    message: resultMessage
+  });
+
+  // TODO: Store command results for dashboard to retrieve
+  // For now, just log it
+}
+
+/**
+ * Handle error report from userscript
+ */
+function handleError(ws, message, context) {
+  const { actionId, error, context: errorContext } = message;
+
+  logger.error('Userscript error', {
+    accountId: context.accountId,
+    actionId,
+    error,
+    context: errorContext
+  });
+
+  // TODO: Store error for dashboard to display
+}
+
+/**
+ * Handle pong response
+ */
+function handlePong(ws, message, context) {
+  // Just acknowledge - connection is alive
+  logger.debug('Pong received', { accountId: context.accountId });
+}
+
+/**
+ * Handle game event from WebSocket interceptor
+ */
+function handleGameEvent(ws, message, context) {
+  if (!context.authenticated) {
+    return;
+  }
+
+  const { type, data, timestamp } = message;
+
+  logger.debug('Game event received', {
+    accountId: context.accountId,
+    type,
+    timestamp
+  });
+
+  switch (type) {
+    case 'incomingCommand':
+      handleIncomingCommand(context.accountId, data);
+      break;
+
+    case 'resourceUpdate':
+      handleResourceUpdate(context.accountId, data);
+      break;
+
+    case 'buildingUpdate':
+      handleBuildingUpdate(context.accountId, data);
+      break;
+
+    case 'recruitmentUpdate':
+      handleRecruitmentUpdate(context.accountId, data);
+      break;
+
+    case 'gameSocketStatus':
+      handleGameSocketStatus(context.accountId, data);
+      break;
+
+    case 'outgoingCommand':
+      handleOutgoingCommand(context.accountId, data);
+      break;
+
+    default:
+      logger.debug('Unknown game event type', { type, accountId: context.accountId });
+      break;
+  }
+}
+
+/**
+ * Handle incoming attack/support command
+ * HIGH PRIORITY - Store and broadcast to dashboard
+ */
+function handleIncomingCommand(accountId, data) {
+  const alert = {
+    alertId: `${accountId}_${data.commandId}`,
+    accountId,
+    commandId: data.commandId,
+    type: data.type,
+    originCoords: data.originCoords,
+    originVillageId: data.originVillageId,
+    originVillageName: data.originVillageName,
+    originPlayerId: data.originPlayerId,
+    originPlayerName: data.originPlayerName,
+    targetVillageId: data.targetVillageId,
+    arrivalTime: data.arrivalTime,
+    size: data.size,
+    createdAt: Date.now()
+  };
+
+  // Store alert
+  const accountState = require('./state/accounts').accountState;
+  accountState.addAlert(accountId, alert);
+
+  logger.warn('🚨 INCOMING COMMAND DETECTED', {
+    accountId,
+    type: data.type,
+    from: data.originCoords,
+    arrival: new Date(data.arrivalTime).toISOString(),
+    size: data.size
+  });
+
+  // Broadcast to all dashboard clients
+  broadcastToDashboards('newAlert', alert);
+}
+
+/**
+ * Handle outgoing command (attack/support sent FROM this village)
+ * Just log it - no alerts needed for outgoing commands
+ */
+function handleOutgoingCommand(accountId, data) {
+  logger.info('📤 OUTGOING COMMAND DETECTED', {
+    accountId,
+    type: data.type,
+    target: data.targetCoords,
+    arrival: data.arrivalTime ? new Date(data.arrivalTime).toISOString() : 'unknown'
+  });
+
+  // Don't create alerts or broadcast - this is not an incoming attack
+}
+
+/**
+ * Handle resource update from game
+ */
+function handleResourceUpdate(accountId, data) {
+  const accountState = require('./state/accounts').accountState;
+  const account = accountState.get(accountId);
+
+  if (account) {
+    // Update resources in real-time
+    accountState.updateData(accountId, {
+      resources: {
+        wood: data.wood,
+        clay: data.clay,
+        iron: data.iron,
+        storage: data.storage,
+        population: {
+          used: data.population,
+          max: data.populationMax
+        }
+      }
+    });
+
+    logger.debug('Resources updated', { accountId, resources: data });
+  }
+}
+
+/**
+ * Handle building update from game
+ */
+function handleBuildingUpdate(accountId, data) {
+  logger.info('Building update', {
+    accountId,
+    building: data.building,
+    level: data.level,
+    event: data.event
+  });
+
+  // TODO: Store building queue info for dashboard
+}
+
+/**
+ * Handle recruitment update from game
+ */
+function handleRecruitmentUpdate(accountId, data) {
+  logger.info('Recruitment update', {
+    accountId,
+    building: data.building,
+    unit: data.unit,
+    amount: data.amount,
+    event: data.event
+  });
+
+  // TODO: Store recruitment queue info for dashboard
+}
+
+/**
+ * Handle game socket status change
+ */
+function handleGameSocketStatus(accountId, data) {
+  logger.info('Game socket status', {
+    accountId,
+    connected: data.connected
+  });
+
+  const accountState = require('./state/accounts').accountState;
+  const account = accountState.get(accountId);
+
+  if (account) {
+    account.gameSocketConnected = data.connected;
+  }
+}
+
+/**
+ * Broadcast event to all connected dashboard clients
+ */
+function broadcastToDashboards(eventType, data) {
+  const accountState = require('./state/accounts').accountState;
+  const wss = accountState.wss;
+
+  if (!wss) return;
+
+  const message = JSON.stringify({
+    type: 'dashboardEvent',
+    eventType,
+    data,
+    timestamp: Date.now()
+  });
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === 1 && client.isDashboard) { // OPEN = 1
+      client.send(message);
+    }
+  });
+
+  logger.debug('Broadcasted to dashboards', { eventType, clientCount: wss.clients.size });
+}
+
+/**
+ * Send command to specific account
+ */
+function sendToAccount(accountId, command) {
+  return accountState.sendToAccount(accountId, command);
+}
+
+/**
+ * Get account by ID
+ */
+function getAccountById(accountId) {
+  return accountState.get(accountId);
+}
+
+/**
+ * Get all accounts
+ */
+function getAccounts() {
+  return accountState.getAll();
+}
+
+/**
+ * Handle get templates request
+ */
+function handleGetTemplates(ws, message) {
+  const { templateType } = message; // 'building' or 'recruitment' or 'all'
+
+  try {
+    let templates;
+    if (templateType === 'all' || !templateType) {
+      templates = {
+        building: templateManager.getBuildingTemplates(),
+        recruitment: templateManager.getRecruitmentTemplates()
+      };
+    } else if (templateType === 'building') {
+      templates = templateManager.getBuildingTemplates();
+    } else if (templateType === 'recruitment') {
+      templates = templateManager.getRecruitmentTemplates();
+    }
+
+    ws.send(JSON.stringify({
+      type: 'templates',
+      templateType,
+      templates
+    }));
+
+    logger.debug('Sent templates', { templateType });
+  } catch (error) {
+    logger.error('Failed to get templates', { error: error.message });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+/**
+ * Handle create template request
+ */
+function handleCreateTemplate(ws, message) {
+  const { templateType, data } = message;
+
+  try {
+    let template;
+    if (templateType === 'building') {
+      template = templateManager.createBuildingTemplate(data);
+    } else if (templateType === 'recruitment') {
+      template = templateManager.createRecruitmentTemplate(data);
+    } else {
+      throw new Error('Invalid template type');
+    }
+
+    ws.send(JSON.stringify({
+      type: 'templateCreated',
+      templateType,
+      template
+    }));
+
+    logger.info('Template created', { templateType, id: template.id, name: template.name });
+
+    // Broadcast to all dashboards
+    broadcastToDashboards('templateCreated', { templateType, template });
+  } catch (error) {
+    logger.error('Failed to create template', { error: error.message });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+/**
+ * Handle update template request
+ */
+function handleUpdateTemplate(ws, message) {
+  const { templateType, id, updates } = message;
+
+  try {
+    let template;
+    if (templateType === 'building') {
+      template = templateManager.updateBuildingTemplate(id, updates);
+    } else if (templateType === 'recruitment') {
+      template = templateManager.updateRecruitmentTemplate(id, updates);
+    } else {
+      throw new Error('Invalid template type');
+    }
+
+    ws.send(JSON.stringify({
+      type: 'templateUpdated',
+      templateType,
+      template
+    }));
+
+    logger.info('Template updated', { templateType, id, name: template.name });
+
+    // Broadcast to all dashboards
+    broadcastToDashboards('templateUpdated', { templateType, template });
+  } catch (error) {
+    logger.error('Failed to update template', { error: error.message });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+/**
+ * Handle delete template request
+ */
+function handleDeleteTemplate(ws, message) {
+  const { templateType, id } = message;
+
+  try {
+    templateManager.deleteTemplate(id, templateType);
+
+    ws.send(JSON.stringify({
+      type: 'templateDeleted',
+      templateType,
+      id
+    }));
+
+    logger.info('Template deleted', { templateType, id });
+
+    // Broadcast to all dashboards
+    broadcastToDashboards('templateDeleted', { templateType, id });
+  } catch (error) {
+    logger.error('Failed to delete template', { error: error.message });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+/**
+ * Handle duplicate template request
+ */
+function handleDuplicateTemplate(ws, message) {
+  const { templateType, id } = message;
+
+  try {
+    const template = templateManager.duplicateTemplate(id, templateType);
+
+    ws.send(JSON.stringify({
+      type: 'templateDuplicated',
+      templateType,
+      template
+    }));
+
+    logger.info('Template duplicated', { templateType, id, newId: template.id });
+
+    // Broadcast to all dashboards
+    broadcastToDashboards('templateCreated', { templateType, template });
+  } catch (error) {
+    logger.error('Failed to duplicate template', { error: error.message });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+/**
+ * Handle template execution request
+ */
+async function handleExecuteTemplate(ws, message) {
+  const { accountId, templateId, options } = message;
+
+  try {
+    logger.info('Executing template', { accountId, templateId });
+
+    const result = await templateExecutor.executeForAccount(accountId, templateId, options);
+
+    ws.send(JSON.stringify({
+      type: 'templateExecutionResult',
+      accountId,
+      templateId,
+      result
+    }));
+
+    // Broadcast to all dashboards
+    broadcastToDashboards('templateExecutionResult', { accountId, templateId, result });
+
+  } catch (error) {
+    logger.error('Failed to execute template', { error: error.message, accountId, templateId });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+/**
+ * Handle template preview request
+ */
+function handlePreviewTemplate(ws, message) {
+  const { accountId, templateId } = message;
+
+  try {
+    const preview = templateExecutor.previewNextStep(accountId, templateId);
+
+    ws.send(JSON.stringify({
+      type: 'templatePreview',
+      accountId,
+      templateId,
+      preview
+    }));
+
+  } catch (error) {
+    logger.error('Failed to preview template', { error: error.message });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+/**
+ * Handle stop template execution request
+ */
+function handleStopTemplateExecution(ws, message) {
+  const { accountId } = message;
+
+  try {
+    const stopped = templateExecutor.stopExecution(accountId);
+
+    ws.send(JSON.stringify({
+      type: 'templateExecutionStopped',
+      accountId,
+      stopped
+    }));
+
+    logger.info('Template execution stopped', { accountId });
+
+  } catch (error) {
+    logger.error('Failed to stop template execution', { error: error.message });
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: error.message
+    }));
+  }
+}
+
+module.exports = {
+  initWebSocket,
+  CONFIG,
+  sendToAccount,
+  getAccountById,
+  getAccounts
+};

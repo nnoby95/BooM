@@ -1,0 +1,577 @@
+/**
+ * TW Controller - Account Cards
+ * Styling for account cards grid and detail panel
+ */
+
+/* ==================== ACCOUNT CARDS GRID ==================== */
+
+.accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width), 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Responsive grid breakpoints */
+@media (min-width: 1400px) {
+    .accounts-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+    .accounts-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    .accounts-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 767px) {
+    .accounts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==================== ACCOUNT CARD ==================== */
+
+.account-card {
+    background: var(--tw-bg-light) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/popup/content_background.png');
+    background-repeat: repeat;
+    border: 2px solid var(--tw-border-medium);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    position: relative;
+}
+
+.account-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+    border-color: var(--tw-border-gold);
+}
+
+.account-card.disconnected {
+    opacity: 0.7;
+    border-color: #aaa;
+}
+
+.account-card.has-alert {
+    border-color: var(--alert-critical);
+    box-shadow: 0 0 10px var(--alert-critical);
+    animation: alertGlow 2s ease-in-out infinite;
+}
+
+@keyframes alertGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px var(--alert-critical);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--alert-critical);
+    }
+}
+
+/* Card Header */
+.account-card-header {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/screen/tableheader_bg3.png');
+    background-repeat: repeat-x;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--tw-border-gold);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.account-name {
+    font-weight: bold;
+    font-size: 12px;
+    color: var(--tw-text-header);
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-header-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+}
+
+.favorite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    line-height: 1;
+    transition: transform var(--transition-fast);
+}
+
+.favorite-btn:hover {
+    transform: scale(1.2);
+}
+
+.favorite-btn.active {
+    color: #ffd700;
+}
+
+/* Card Body */
+.account-card-body {
+    padding: var(--spacing-md);
+}
+
+.village-info {
+    margin-bottom: var(--spacing-sm);
+}
+
+.village-name {
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+.village-coords {
+    font-size: 10px;
+    color: #666;
+}
+
+/* Resources Section */
+.account-resources {
+    margin: var(--spacing-md) 0;
+}
+
+.resource-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+    font-size: 10px;
+}
+
+.resource-row .resource-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+}
+
+.resource-value {
+    font-weight: bold;
+    margin-right: var(--spacing-xs);
+    min-width: 50px;
+}
+
+.resource-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--tw-border-dark);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.resource-bar-fill {
+    height: 100%;
+    transition: width var(--transition-normal);
+}
+
+/* Alert Box in Card */
+.card-alert-box {
+    background: linear-gradient(to right, rgba(217, 83, 79, 0.9), rgba(217, 83, 79, 0.7));
+    border: 1px solid var(--alert-critical);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    color: white;
+    font-weight: bold;
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.card-alert-box .countdown {
+    font-family: 'Courier New', monospace;
+    color: white;
+}
+
+/* Building Queue in Card */
+.card-build-queue {
+    background: rgba(93, 126, 30, 0.1);
+    border: 1px solid var(--tw-btn-green);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    font-size: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Recruitment Queue in Card */
+.card-recruit-queue {
+    background: rgba(93, 67, 48, 0.1);
+    border: 1px solid var(--tw-border-medium);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    font-size: 10px;
+}
+
+/* Card Footer */
+.account-card-footer {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-top: 1px solid var(--tw-border-light);
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 9px;
+    color: #666;
+    text-align: right;
+}
+
+/* ==================== DETAIL PANEL ==================== */
+
+.detail-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: var(--detail-panel-width);
+    height: 100vh;
+    background: var(--tw-bg-light) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/popup/content_background.png');
+    background-repeat: repeat;
+    border-left: 3px solid var(--tw-border-dark);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+    z-index: var(--z-detail-panel);
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform var(--transition-normal);
+}
+
+.detail-panel.open {
+    transform: translateX(0);
+}
+
+/* Detail Panel Header */
+.detail-panel-header {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550) url('https://dshu.innogamescdn.com/asset/2a2f957f/graphic/screen/tableheader_bg3.png');
+    background-repeat: repeat-x;
+    padding: var(--spacing-md);
+    border-bottom: 2px solid var(--tw-border-gold);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.detail-panel-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+    flex: 1;
+}
+
+.detail-panel-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--tw-text-header);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    line-height: 1;
+    transition: all var(--transition-fast);
+}
+
+.detail-panel-close:hover {
+    color: var(--tw-btn-red);
+    transform: scale(1.2);
+}
+
+/* Detail Panel Body */
+.detail-panel-body {
+    padding: var(--spacing-md);
+}
+
+/* Detail Sections */
+.detail-section {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--tw-border-light);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.detail-section-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--tw-border-light);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 11px;
+}
+
+.detail-label {
+    color: #666;
+}
+
+.detail-value {
+    font-weight: bold;
+}
+
+/* Resource Details */
+.resource-detail {
+    margin-bottom: var(--spacing-sm);
+}
+
+.resource-detail-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: 11px;
+}
+
+.resource-detail-header .resource-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.resource-detail-header strong {
+    margin-left: var(--spacing-xs);
+}
+
+.resource-detail-bar {
+    height: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--tw-border-dark);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+}
+
+.resource-detail-bar-fill {
+    height: 100%;
+    transition: width var(--transition-normal);
+}
+
+.resource-detail-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Troops Grid */
+.troops-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.troop-item {
+    text-align: center;
+    padding: var(--spacing-xs);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-sm);
+}
+
+.troop-item .unit-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 2px;
+}
+
+.troop-count {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.troop-name {
+    font-size: 9px;
+    color: #666;
+}
+
+/* Buildings Grid */
+.buildings-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.building-item {
+    text-align: center;
+    padding: var(--spacing-xs);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-sm);
+    position: relative;
+}
+
+.building-item .building-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 2px;
+}
+
+.building-level {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--tw-bg-dark);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+}
+
+.building-name {
+    font-size: 9px;
+    color: #666;
+}
+
+/* Queue Items */
+.queue-item {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--tw-border-light);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+}
+
+.queue-item:last-child {
+    margin-bottom: 0;
+}
+
+.queue-item-info {
+    flex: 1;
+}
+
+.queue-item-time {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    margin: 0 var(--spacing-sm);
+}
+
+.queue-item-cancel {
+    background: var(--tw-btn-red);
+    color: white;
+    border: none;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.queue-item-cancel:hover {
+    background: var(--tw-btn-red-hover);
+}
+
+/* Action Buttons Grid */
+.action-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.action-btn {
+    padding: var(--spacing-md);
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    border: 2px solid var(--tw-border-medium);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    background: linear-gradient(to bottom, var(--tw-bg-light), #e8d8b0);
+    transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+    background: linear-gradient(to bottom, var(--tw-bg-header), #a08550);
+    border-color: var(--tw-border-gold);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Notes Section */
+.notes-section {
+    background: #fffbe6;
+    border: 1px solid #ffecb3;
+}
+
+.notes-text {
+    font-size: 11px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: var(--spacing-sm);
+}
+
+.notes-meta {
+    font-size: 9px;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Incoming/Outgoing Commands */
+.command-item {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--tw-border-light);
+    border-left: 4px solid var(--status-busy);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    font-size: 10px;
+}
+
+.command-item.incoming-attack {
+    border-left-color: var(--alert-critical);
+}
+
+.command-item.incoming-support {
+    border-left-color: var(--status-online);
+}
+
+.command-item.outgoing {
+    border-left-color: var(--status-warning);
+}
+
+/* Responsive Detail Panel */
+@media (max-width: 768px) {
+    .detail-panel {
+        width: 100%;
+    }
+
+    .troops-grid,
+    .buildings-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .action-buttons-grid {
+        grid-template-columns: 1fr;
+    }
+}

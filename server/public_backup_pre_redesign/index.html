@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TW Vezérlő - Központi Panel</title>
+  <!-- TW Theme CSS -->
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/tw-theme.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/cards.css">
+  <!-- Old styles.css commented out - using TW theme now -->
+  <!-- <link rel="stylesheet" href="/css/styles.css"> -->
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎮 TW Vezérlő - Központi Panel</h1>
+      <div id="status">
+        <span id="connection-status">Inicializálás...</span>
+        <span id="account-count">0 fiók</span>
+        <span id="queue-status">Várólista: 0</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- Command Panel Tabs -->
+      <section class="section command-section">
+        <h2>⚡ Parancsok</h2>
+
+        <div class="tabs">
+          <button class="tab-button active" data-tab="troops">Csapatok Küldése</button>
+          <button class="tab-button" data-tab="build">Építés</button>
+          <button class="tab-button" data-tab="recruit">Toborzás</button>
+          <button class="tab-button" data-tab="bulk">Tömeges Műveletek</button>
+          <button class="tab-button" data-tab="templates">Sablonok</button>
+          <button class="tab-button" data-tab="alerts">Riasztások</button>
+          <button class="tab-button" data-tab="logs">Napló</button>
+          <button class="tab-button" data-tab="settings">Beállítások</button>
+        </div>
+
+        <!-- Send Troops Panel -->
+        <div id="tab-troops" class="tab-content active">
+          <h3>Csapatok Küldése</h3>
+
+          <div class="form-group">
+            <label>Fiók Kiválasztása</label>
+            <select id="send-account" class="form-control">
+              <option value="">Válassz fiókot...</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cél Koordináták</label>
+              <input type="text" id="send-coords" class="form-control" placeholder="500|500">
+            </div>
+            <div class="form-group">
+              <label>Típus</label>
+              <select id="send-type" class="form-control">
+                <option value="attack">Támadás</option>
+                <option value="support">Támogatás</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="troops-grid">
+            <div class="troop-input">
+              <label>Lándzsás</label>
+              <input type="number" id="troop-spear" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Kardos</label>
+              <input type="number" id="troop-sword" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Fejszés</label>
+              <input type="number" id="troop-axe" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Íjász</label>
+              <input type="number" id="troop-archer" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Felderítő</label>
+              <input type="number" id="troop-spy" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Könnyűlovas</label>
+              <input type="number" id="troop-light" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Lovasíjász</label>
+              <input type="number" id="troop-marcher" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Nehézlovas</label>
+              <input type="number" id="troop-heavy" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Faltörő Kos</label>
+              <input type="number" id="troop-ram" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Katapult</label>
+              <input type="number" id="troop-catapult" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Nemes</label>
+              <input type="number" id="troop-snob" class="form-control" value="0" min="0">
+            </div>
+          </div>
+
+          <button id="btn-send-troops" class="btn btn-primary">📤 Csapatok Küldése</button>
+        </div>
+
+        <!-- Build Panel -->
+        <div id="tab-build" class="tab-content">
+          <h3>Építés</h3>
+
+          <div class="form-group">
+            <label>Fiók Kiválasztása</label>
+            <select id="build-account" class="form-control">
+              <option value="">Válassz fiókot...</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Épület</label>
+              <select id="build-building" class="form-control">
+                <option value="main">Főépület</option>
+                <option value="barracks">Kaszárnya</option>
+                <option value="stable">Istálló</option>
+                <option value="garage">Műhely</option>
+                <option value="snob">Akadémia</option>
+                <option value="smith">Kovács</option>
+                <option value="place">Gyülekezőhely</option>
+                <option value="statue">Szobor</option>
+                <option value="market">Piac</option>
+                <option value="wood">Favágó</option>
+                <option value="stone">Agyagbánya</option>
+                <option value="iron">Vasbánya</option>
+                <option value="farm">Farm</option>
+                <option value="storage">Raktár</option>
+                <option value="hide">Rejtekely</option>
+                <option value="wall">Fal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Szintek Száma</label>
+              <input type="number" id="build-levels" class="form-control" value="1" min="1" max="10">
+            </div>
+          </div>
+
+          <button id="btn-build" class="btn btn-primary">🏗️ Építés Indítása</button>
+        </div>
+
+        <!-- Recruit Panel -->
+        <div id="tab-recruit" class="tab-content">
+          <h3>Toborzás</h3>
+
+          <div class="form-group">
+            <label>Fiók Kiválasztása</label>
+            <select id="recruit-account" class="form-control">
+              <option value="">Válassz fiókot...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Épület</label>
+            <select id="recruit-building" class="form-control">
+              <option value="barracks">Kaszárnya</option>
+              <option value="stable">Istálló</option>
+              <option value="garage">Műhely</option>
+              <option value="snob">Akadémia</option>
+            </select>
+          </div>
+
+          <div class="troops-grid">
+            <div class="troop-input">
+              <label>Lándzsás</label>
+              <input type="number" id="recruit-spear" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Kardos</label>
+              <input type="number" id="recruit-sword" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Fejszés</label>
+              <input type="number" id="recruit-axe" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Íjász</label>
+              <input type="number" id="recruit-archer" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Felderítő</label>
+              <input type="number" id="recruit-spy" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Könnyűlovas</label>
+              <input type="number" id="recruit-light" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Lovasíjász</label>
+              <input type="number" id="recruit-marcher" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Nehézlovas</label>
+              <input type="number" id="recruit-heavy" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Faltörő Kos</label>
+              <input type="number" id="recruit-ram" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Katapult</label>
+              <input type="number" id="recruit-catapult" class="form-control" value="0" min="0">
+            </div>
+            <div class="troop-input">
+              <label>Nemes</label>
+              <input type="number" id="recruit-snob" class="form-control" value="0" min="0">
+            </div>
+          </div>
+
+          <button id="btn-recruit" class="btn btn-primary">👥 Toborzás Indítása</button>
+        </div>
+
+        <!-- Bulk Operations Panel -->
+        <div id="tab-bulk" class="tab-content">
+          <h3>Tömeges Műveletek</h3>
+          <p class="info">⚠️ A tömeges műveletek automatikusan várólista rendszert használnak a biztonság érdekében (5-15 mp késleltetés parancsok között)</p>
+
+          <div class="bulk-operation">
+            <h4>Tömeges Támadás</h4>
+            <div class="form-group">
+              <label>Célkoordináták</label>
+              <input type="text" id="bulk-attack-coords" class="form-control" placeholder="500|500">
+            </div>
+            <div class="form-group">
+              <label>Csapatok (minden egységből)</label>
+              <input type="number" id="bulk-attack-count" class="form-control" value="100" min="1">
+            </div>
+            <div class="form-group">
+              <label>Résztvevő Fiókok</label>
+              <select id="bulk-attack-accounts" class="form-control" multiple size="8">
+                <!-- Populated by JS -->
+              </select>
+              <small>Tipp: Ctrl+Click több fiók kiválasztásához</small>
+            </div>
+            <button id="btn-bulk-attack" class="btn btn-warning">⚔️ Tömeges Támadás Indítása</button>
+          </div>
+
+          <div class="bulk-operation">
+            <h4>Építési Sablon Végrehajtás</h4>
+            <div class="form-group">
+              <label>Sablon Kiválasztása</label>
+              <select id="bulk-build-template" class="form-control">
+                <option value="">Válassz sablont...</option>
+                <!-- Populated by JS -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Max Lépések (egy futásban)</label>
+              <input type="number" id="bulk-build-max-ops" class="form-control" value="2" min="1" max="10">
+              <small>Hány építést próbáljon végrehajtani egyszerre (default: 2)</small>
+            </div>
+            <div class="form-group">
+              <label>Résztvevő Fiókok</label>
+              <select id="bulk-build-accounts" class="form-control" multiple size="8">
+                <!-- Populated by JS -->
+              </select>
+              <small>Tipp: Ctrl+Click több fiók kiválasztásához</small>
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="bulk-build-auto-storage" checked>
+                Automatikus raktár fejlesztés
+              </label>
+              <br>
+              <label>
+                <input type="checkbox" id="bulk-build-auto-farm" checked>
+                Automatikus farm fejlesztés
+              </label>
+            </div>
+            <button id="btn-bulk-build-template" class="btn btn-primary">🏗️ Építési Sablon Indítása</button>
+          </div>
+
+          <div class="bulk-operation">
+            <h4>Toborzási Sablon Végrehajtás</h4>
+            <div class="form-group">
+              <label>Sablon Kiválasztása</label>
+              <select id="bulk-recruit-template" class="form-control">
+                <option value="">Válassz sablont...</option>
+                <!-- Populated by JS -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Résztvevő Fiókok</label>
+              <select id="bulk-recruit-accounts" class="form-control" multiple size="8">
+                <!-- Populated by JS -->
+              </select>
+              <small>Tipp: Ctrl+Click több fiók kiválasztásához</small>
+            </div>
+            <button id="btn-bulk-recruit-template" class="btn btn-primary">👥 Toborzási Sablon Indítása</button>
+          </div>
+        </div>
+
+        <!-- Templates Panel -->
+        <div id="tab-templates" class="tab-content">
+          <h3>Sablon Kezelés</h3>
+          <div id="template-manager-container">
+            <!-- Template manager will be rendered here by templates.js -->
+            <p class="loading">Sablonok betöltése...</p>
+          </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="tab-alerts" class="tab-content">
+          <div id="alerts-tab-container">
+            <!-- Alerts tab will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="tab-logs" class="tab-content">
+          <div id="logs-tab-container">
+            <!-- Logs tab will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tab-content">
+          <div id="settings-tab-container">
+            <!-- Settings tab will be rendered here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Queue Status -->
+      <section class="section">
+        <h2>⏳ Várólista Állapota</h2>
+        <div id="queue-info" class="queue-display">
+          <div class="queue-stat">
+            <span class="label">Várólistán:</span>
+            <span id="queue-length" class="value">0</span>
+          </div>
+          <div class="queue-stat">
+            <span class="label">Feldolgozás:</span>
+            <span id="queue-processing" class="value">Tétlen</span>
+          </div>
+        </div>
+        <div id="queue-list">
+          <p class="no-data">Nincs parancs a várólistán</p>
+        </div>
+        <button id="btn-clear-queue" class="btn btn-danger">🗑️ Várólista Törlése</button>
+      </section>
+
+      <!-- Connected Accounts -->
+      <section class="section">
+        <h2>📱 Csatlakozott Fiókok</h2>
+        <div id="accounts-grid" class="accounts-grid">
+          <p class="loading">Fiókok betöltése...</p>
+        </div>
+      </section>
+
+      <!-- Alerts -->
+      <section class="section">
+        <h2>⚠️ Riasztások</h2>
+        <div id="alerts-list">
+          <p class="no-data">Nincs bejövő támadás</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Detail Panel Container -->
+  <div id="detail-panel-container"></div>
+
+  <!-- JavaScript Components -->
+  <script src="/js/components/Component.js"></script>
+  <script src="/js/components/Modal.js"></script>
+  <script src="/js/components/BuildModal.js"></script>
+  <script src="/js/components/AttackModal.js"></script>
+  <script src="/js/components/RecruitModal.js"></script>
+  <script src="/js/components/AccountCard.js"></script>
+  <script src="/js/components/DetailPanel.js"></script>
+  <script src="/js/components/AlertsTab.js"></script>
+  <script src="/js/components/LogsTab.js"></script>
+  <script src="/js/components/SettingsTab.js"></script>
+  <script src="/js/templates.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
