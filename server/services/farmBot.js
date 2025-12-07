@@ -464,6 +464,35 @@ class FarmBotService {
   }
 
   /**
+   * Reset a stalled farm session (timeout) but keep the loop running
+   * This allows the farm to retry on the next scheduled interval
+   */
+  resetStalled(accountId) {
+    const session = this.farmSessions.get(accountId);
+    if (!session) {
+      return { success: false, error: 'No farm session' };
+    }
+
+    // Reset the stuck state
+    session.isFarming = false;
+    session.currentProgress = null;
+    session.lastError = 'Timeout - no response';
+
+    logger.info(`Farm session reset (stalled) for ${accountId}, scheduling retry`);
+
+    // If farm was running, schedule next run (retry mode = shorter delay)
+    if (session.isRunning && !session.isPaused) {
+      this.scheduleNextRun(accountId, true); // true = retry mode (2 min delay)
+    }
+
+    return {
+      success: true,
+      message: 'Session reset, will retry on next interval',
+      status: this.getStatus(accountId)
+    };
+  }
+
+  /**
    * Schedule next farm run
    */
   scheduleNextRun(accountId, isRetry = false) {

@@ -19,6 +19,7 @@ let alertsTab = null;
 let logsTab = null;
 let settingsTab = null;
 let debugTab = null;
+let bulkFarmTab = null;
 
 // Initialize dashboard
 async function init() {
@@ -32,12 +33,14 @@ async function init() {
   logsTab = new LogsTab('#logs-tab-container');
   settingsTab = new SettingsTab('#settings-tab-container');
   debugTab = new DebugTab('#debug-tab-container');
+  bulkFarmTab = new BulkFarmTab('#bulk-farm-tab-container');
 
   // Initial render of tabs
   alertsTab.render();
   logsTab.render();
   settingsTab.render();
   debugTab.init();
+  bulkFarmTab.init();
 
   // Setup feature navigation
   setupFeatureNav();
@@ -76,6 +79,7 @@ async function init() {
   window.logsTab = logsTab;
   window.settingsTab = settingsTab;
   window.debugTab = debugTab;
+  window.bulkFarmTab = bulkFarmTab;
   window.accounts = accounts;
   window.addLog = addLog;
 }
@@ -269,6 +273,11 @@ function renderAccounts() {
       accountsGrid.appendChild(card.render());
     }
   });
+
+  // Update BulkFarmTab when accounts change
+  if (bulkFarmTab) {
+    bulkFarmTab.render();
+  }
 }
 
 /**
@@ -748,6 +757,13 @@ function handleDashboardMessage(message) {
         data: message.data || {},
         timestamp: message.timestamp || Date.now()
       });
+    }
+  }
+
+  // Handle bulk farm messages
+  if (['bulkFarmProgress', 'bulkFarmComplete', 'bulkFarmStopped', 'bulkFarmLog'].includes(message.type)) {
+    if (bulkFarmTab) {
+      bulkFarmTab.handleWebSocketMessage(message);
     }
   }
 }

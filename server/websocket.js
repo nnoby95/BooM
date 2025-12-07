@@ -9,6 +9,7 @@ const { logger } = require('./utils/logger');
 const templateManager = require('./state/templates');
 const templateExecutor = require('./services/templateExecutor');
 const { farmBot } = require('./services/farmBot');
+const { bulkFarmService } = require('./services/bulkFarmService');
 const { debugLog } = require('./services/debugLog');
 
 // Configuration
@@ -25,6 +26,11 @@ function initWebSocket(server) {
 
   // Store wss instance for broadcasting to dashboards
   accountState.wss = wss;
+
+  // Set up broadcast function for bulk farm service
+  bulkFarmService.setBroadcast((data) => {
+    broadcastToDashboards(data.type, data);
+  });
 
   logger.info('WebSocket server initialized on /ws');
 
@@ -836,6 +842,9 @@ function handleFarmProgress(ws, message, context) {
 
   farmBot.handleProgress(context.accountId, { actionId, current, total });
 
+  // Notify bulk farm service of progress (confirms farm is running)
+  bulkFarmService.handleFarmProgress(context.accountId);
+
   // Broadcast to dashboards
   broadcastToDashboards('farmProgress', {
     accountId: context.accountId,
@@ -877,6 +886,9 @@ function handleFarmComplete(ws, message, context) {
 
   farmBot.handleComplete(context.accountId, { actionId, farmed, duration, emptyRun });
 
+  // Notify bulk farm service of completion (confirms farm ran)
+  bulkFarmService.handleFarmComplete(context.accountId);
+
   // Broadcast to dashboards
   broadcastToDashboards('farmComplete', {
     accountId: context.accountId,
@@ -909,6 +921,9 @@ function handleFarmError(ws, message, context) {
   });
 
   farmBot.handleError(context.accountId, { actionId, error, message: errorMessage });
+
+  // Notify bulk farm service of error
+  bulkFarmService.handleFarmError(context.accountId, error);
 
   // Broadcast to dashboards
   broadcastToDashboards('farmError', {

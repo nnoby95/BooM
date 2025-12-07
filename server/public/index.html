@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/css/components.css?v=1004">
   <link rel="stylesheet" href="/css/cards.css">
   <link rel="stylesheet" href="/css/farm.css?v=1001">
+  <link rel="stylesheet" href="/css/bulk-farm.css?v=1002">
   <link rel="stylesheet" href="/css/debug.css?v=1002">
 </head>
 <body>
@@ -27,7 +28,7 @@
     <!-- Feature Navigation Bar -->
     <nav class="feature-nav">
       <div class="feature-box active" data-feature="accounts">Fiókok</div>
-      <div class="feature-box disabled" data-feature="placeholder1"></div>
+      <div class="feature-box" data-feature="bulk-farm">Bulk Farm</div>
       <div class="feature-box disabled" data-feature="placeholder2"></div>
       <div class="feature-box disabled" data-feature="placeholder3"></div>
       <div class="feature-box disabled" data-feature="placeholder4"></div>
@@ -55,6 +56,13 @@
             <p class="no-data">Nincs bejövő támadás</p>
           </div>
         </section>
+      </div>
+
+      <!-- Bulk Farm Feature -->
+      <div id="feature-bulk-farm" class="feature-content">
+        <div id="bulk-farm-tab-container">
+          <!-- Bulk Farm tab will be rendered here -->
+        </div>
       </div>
 
       <!-- Debug Feature -->
@@ -93,7 +101,8 @@
   <script src="/js/components/LogsTab.js"></script>
   <script src="/js/components/SettingsTab.js"></script>
   <script src="/js/components/DebugTab.js"></script>
+  <script src="/js/components/BulkFarmTab.js?v=1004"></script>
   <script src="/js/templates.js"></script>
-  <script src="/js/app.js?v=1003"></script>
+  <script src="/js/app.js?v=1005"></script>
 </body>
 </html>

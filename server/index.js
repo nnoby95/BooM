@@ -12,6 +12,7 @@ const templateManager = require('./state/templates');
 const apiRoutes = require('./routes/api');
 const commandRoutes = require('./routes/commands');
 const farmRoutes = require('./routes/farm');
+const bulkFarmRoutes = require('./routes/bulkFarm');
 const debugRoutes = require('./routes/debug');
 const { logger } = require('./utils/logger');
 
@@ -39,6 +40,7 @@ app.use((req, res, next) => {
 app.use('/api', apiRoutes);
 app.use('/api/commands', commandRoutes);
 app.use('/api/farm', farmRoutes);
+app.use('/api/bulk-farm', bulkFarmRoutes);
 app.use('/api/debug', debugRoutes);
 
 // Serve userscript with proper headers for Tampermonkey
