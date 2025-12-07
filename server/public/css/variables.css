@@ -77,7 +77,7 @@
     /* Card dimensions */
     --card-min-width: 280px;
     --card-max-width: 350px;
-    --detail-panel-width: 500px;
+    --detail-panel-width: 700px;
 
     /* TW CDN Base URL */
     --tw-cdn: 'https://dshu.innogamescdn.com/asset/2a2f957f';

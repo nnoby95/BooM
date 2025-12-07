@@ -395,6 +395,37 @@
   - Updated to version 1.0.24
   - Deployed to Linode server
 
+- [2025-12-07] Dashboard Sidebars & Navigation System (v1.3.0) ✅
+  - **USER REQUEST**: Two-sidebar layout with navigation buttons to control master tab
+  - **IMPLEMENTED**:
+    - **Two-Sidebar Layout**: Detail panel now has two vertical sidebars on the left
+      - Left Sidebar 1 (Műveletek/Actions): Build, Attack, Support, Recruit, Refresh buttons
+      - Left Sidebar 2 (Navigáció/Navigation): In-game navigation buttons
+    - **Navigation Sidebar Buttons**:
+      - 🏘️ Áttekintés (Village Overview)
+      - 🏛️ Főépület (Main Building)
+      - ⚔️ Kaszárnya (Barracks)
+      - 🚩 Gyülekező (Rally Point)
+      - 📊 Statisztika (Statistics)
+      - 🛒 Piac (Market)
+    - **Navigation Command Flow**:
+      1. User clicks navigation button in dashboard
+      2. `handleNavigation()` sends POST to `/api/commands/navigate`
+      3. Server validates screen and sends command to master tab via WebSocket
+      4. Userscript's `handleNavigate()` navigates using `window.location.href`
+    - **Visual Styling**:
+      - Actions sidebar: Brown theme (matches TW wood)
+      - Navigation sidebar: Green theme (distinguishes from actions)
+      - 80px sidebar width, vertical button layout
+  - **Files Modified**:
+    - `server/routes/commands.js`: Added navigate and fetch-statistics endpoints
+    - `server/public/js/components/DetailPanel.js`: Added sidebars and handlers
+    - `server/public/css/cards.css`: Added sidebar styling
+    - `userscript/tw-agent.user.js`: Added handleNavigate function
+  - Updated to version 1.3.0
+  - Deployed to Linode server
+  - **USER CONFIRMED**: Navigation working perfectly!
+
 ## Current State
 Phase 2, 3, 4 & 5 - Account Display + Modals + Templates + Alerts/Logs/Settings (COMPLETE AND DEPLOYED)
 - **Linode Server**: 172.236.201.97 (DEPLOYED AND RUNNING)
@@ -404,7 +435,7 @@ Phase 2, 3, 4 & 5 - Account Display + Modals + Templates + Alerts/Logs/Settings 
   - Local: d:\TW\Multy\server
   - Linode: /root/tw-controller (172.236.201.97)
   - **ANY EDIT must be applied to BOTH locations**
-- **Userscript**: userscript/tw-agent.user.js (version 1.0.23)
+- **Userscript**: userscript/tw-agent.user.js (version 1.3.0)
 - **Current config**: wss://172.236.201.97:3000/ws
 - **Connected Accounts**: 3 (hu97_norbitheking, hu97_kupido98, hu97_error404)
 - **Architecture**: 3 VPS servers with 10 Chrome profiles each -> Linode server (single deployment)

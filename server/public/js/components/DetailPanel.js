@@ -9,6 +9,32 @@ class DetailPanel extends Component {
     this.isOpen = false;
     this.currentAccount = null;
     this.updateInterval = null;
+
+    // Resize state
+    this.isResizing = false;
+    this.minWidth = 400;
+    this.maxWidth = 1200;
+    this.savedWidth = this.loadSavedWidth();
+
+    // Bind resize handlers
+    this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.handleMouseUp = this.handleMouseUp.bind(this);
+  }
+
+  /**
+   * Load saved panel width from localStorage
+   */
+  loadSavedWidth() {
+    const saved = localStorage.getItem('detailPanelWidth');
+    return saved ? parseInt(saved, 10) : null;
+  }
+
+  /**
+   * Save panel width to localStorage
+   */
+  saveWidth(width) {
+    localStorage.setItem('detailPanelWidth', width);
+    this.savedWidth = width;
   }
 
   /**
@@ -85,10 +111,33 @@ class DetailPanel extends Component {
     // Create panel element
     const panel = this.createElement('div', { className: 'detail-panel' });
 
+    // Apply saved width if exists
+    if (this.savedWidth) {
+      panel.style.width = `${this.savedWidth}px`;
+    }
+
+    // Add resize handle
+    const resizeHandle = this.createElement('div', { className: 'detail-panel-resize' });
+    resizeHandle.addEventListener('mousedown', (e) => this.handleMouseDown(e, panel));
+    panel.appendChild(resizeHandle);
+
     // Header
     panel.appendChild(this.createHeader(account));
 
-    // Body with sections
+    // Main content wrapper - three column layout
+    const mainContent = this.createElement('div', { className: 'detail-panel-main' });
+
+    // LEFT SIDEBAR 1 - Action buttons (Műveletek)
+    const actionsSidebar = this.createElement('div', { className: 'detail-panel-sidebar' });
+    actionsSidebar.appendChild(this.createActionsSidebar(account));
+    mainContent.appendChild(actionsSidebar);
+
+    // LEFT SIDEBAR 2 - Navigation buttons (Navigáció)
+    const navSidebar = this.createElement('div', { className: 'detail-panel-sidebar' });
+    navSidebar.appendChild(this.createNavigationSidebar(account));
+    mainContent.appendChild(navSidebar);
+
+    // RIGHT CONTENT - Detail sections
     const body = this.createElement('div', { className: 'detail-panel-body' });
 
     // Village Info
@@ -120,15 +169,17 @@ class DetailPanel extends Component {
     // Incoming/Outgoing
     body.appendChild(this.createCommandsSection(account.data.incomings, account.data.outgoings));
 
+    // Statistics - Always show section with Fetch button
+    body.appendChild(this.createStatisticsSection(account.data.statistics, account.accountId));
+
     // Notes (if exists)
     if (account.notes) {
       body.appendChild(this.createNotesSection(account));
     }
 
-    // Action Buttons
-    body.appendChild(this.createActionsSection(account));
-
-    panel.appendChild(body);
+    // Add body to main content, then main content to panel
+    mainContent.appendChild(body);
+    panel.appendChild(mainContent);
 
     // Clear container and add panel
     this.container.innerHTML = '';
@@ -614,6 +665,221 @@ class DetailPanel extends Component {
   }
 
   /**
+   * Create statistics section
+   * @param {Object|null} statistics - Statistics data or null
+   * @param {string} accountId - Account ID for fetch button
+   */
+  createStatisticsSection(statistics, accountId) {
+    const section = this.createElement('div', { className: 'detail-section' });
+
+    // Title with Fetch button
+    const titleRow = this.createElement('div', {
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }
+    });
+
+    const title = this.createElement('div', {
+      className: 'detail-section-title',
+      style: { marginBottom: '0' }
+    }, '📊 Statisztikák');
+    titleRow.appendChild(title);
+
+    const fetchBtn = this.createElement('button', {
+      className: 'btn btn-sm btn-brown',
+      style: { fontSize: '10px', padding: '4px 8px' },
+      onClick: () => this.handleFetchStatistics(accountId)
+    }, '🔄 Lekérés');
+    titleRow.appendChild(fetchBtn);
+
+    section.appendChild(titleRow);
+
+    // If no statistics data, show message
+    if (!statistics || !statistics.summary) {
+      const noData = this.createElement('div', {
+        style: {
+          textAlign: 'center',
+          color: '#999',
+          fontStyle: 'italic',
+          padding: '16px'
+        }
+      }, 'Nincs statisztikai adat. Kattints a "Lekérés" gombra a betöltéshez.');
+      section.appendChild(noData);
+      return section;
+    }
+
+    const summary = statistics.summary;
+
+    // Player stats grid
+    const statsGrid = this.createElement('div', {
+      className: 'stats-grid',
+      style: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '8px',
+        marginBottom: '12px'
+      }
+    });
+
+    // Current Points
+    statsGrid.appendChild(this.createStatItem('🏆 Pontok', this.formatNumber(summary.currentPoints)));
+
+    // Current Rank
+    statsGrid.appendChild(this.createStatItem('📈 Helyezés', `#${summary.currentRank}`));
+
+    // Current Villages
+    statsGrid.appendChild(this.createStatItem('🏰 Falvak', summary.currentVillages));
+
+    // Total Looted
+    statsGrid.appendChild(this.createStatItem('💰 Zsákmány', this.formatNumber(summary.totalLooted)));
+
+    // Enemy Killed
+    statsGrid.appendChild(this.createStatItem('⚔️ Legyőzött', this.formatNumber(summary.totalEnemyKilled)));
+
+    // Troop Gains
+    statsGrid.appendChild(this.createStatItem('📗 Nyereség', this.formatNumber(summary.totalTroopGains)));
+
+    // Troop Losses
+    statsGrid.appendChild(this.createStatItem('📕 Veszteség', this.formatNumber(summary.totalTroopLosses)));
+
+    section.appendChild(statsGrid);
+
+    // Show last scraped time
+    if (statistics.scrapedAt) {
+      const scrapedTime = new Date(statistics.scrapedAt).toLocaleString('hu-HU');
+      const timeInfo = this.createElement('div', {
+        style: { fontSize: '9px', color: '#666', textAlign: 'right' }
+      }, `Utolsó frissítés: ${scrapedTime}`);
+      section.appendChild(timeInfo);
+    }
+
+    // Trend indicators (if we have graph data)
+    if (statistics.graphs && statistics.graphs.playerPoints && statistics.graphs.playerPoints.length > 1) {
+      section.appendChild(this.createTrendSection(statistics.graphs));
+    }
+
+    return section;
+  }
+
+  /**
+   * Create a stat item for the statistics grid
+   */
+  createStatItem(label, value) {
+    const item = this.createElement('div', {
+      className: 'stat-item',
+      style: {
+        background: 'rgba(101, 67, 33, 0.2)',
+        padding: '8px',
+        borderRadius: '4px',
+        textAlign: 'center'
+      }
+    });
+
+    const labelEl = this.createElement('div', {
+      style: { fontSize: '10px', color: '#999', marginBottom: '4px' }
+    }, label);
+    item.appendChild(labelEl);
+
+    const valueEl = this.createElement('div', {
+      style: { fontSize: '14px', fontWeight: 'bold', color: '#d4af37' }
+    }, value !== null && value !== undefined ? value.toString() : '-');
+    item.appendChild(valueEl);
+
+    return item;
+  }
+
+  /**
+   * Create trend section from graph data
+   */
+  createTrendSection(graphs) {
+    const container = this.createElement('div', {
+      style: { marginTop: '12px' }
+    });
+
+    const trendTitle = this.createElement('div', {
+      style: { fontSize: '11px', fontWeight: 'bold', marginBottom: '8px' }
+    }, '📉 Trend (utolsó 7 nap)');
+    container.appendChild(trendTitle);
+
+    // Calculate trends from graph data
+    const trends = [];
+
+    // Points trend
+    if (graphs.playerPoints && graphs.playerPoints.length >= 2) {
+      const recent = graphs.playerPoints.slice(-7);
+      if (recent.length >= 2) {
+        const first = recent[0][1];
+        const last = recent[recent.length - 1][1];
+        const change = last - first;
+        const percent = first > 0 ? ((change / first) * 100).toFixed(1) : 0;
+        trends.push({
+          label: 'Pontok',
+          change: change,
+          percent: percent,
+          positive: change >= 0
+        });
+      }
+    }
+
+    // Rank trend (inverted - lower is better)
+    if (graphs.playerRank && graphs.playerRank.length >= 2) {
+      const recent = graphs.playerRank.slice(-7);
+      if (recent.length >= 2) {
+        const first = recent[0][1];
+        const last = recent[recent.length - 1][1];
+        const change = first - last; // Inverted: positive means rank improved
+        trends.push({
+          label: 'Helyezés',
+          change: -change, // Show as negative if rank number went up
+          percent: null,
+          positive: change >= 0
+        });
+      }
+    }
+
+    if (trends.length === 0) {
+      return container;
+    }
+
+    const trendGrid = this.createElement('div', {
+      style: {
+        display: 'flex',
+        gap: '8px',
+        flexWrap: 'wrap'
+      }
+    });
+
+    trends.forEach(trend => {
+      const trendItem = this.createElement('div', {
+        style: {
+          background: trend.positive ? 'rgba(0, 128, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+        }
+      });
+
+      const arrow = trend.positive ? '▲' : '▼';
+      const color = trend.positive ? '#4CAF50' : '#f44336';
+      const changeText = trend.percent !== null
+        ? `${arrow} ${trend.percent}%`
+        : `${arrow} ${Math.abs(trend.change)}`;
+
+      trendItem.innerHTML = `<span style="color: ${color}">${changeText}</span> ${trend.label}`;
+      trendGrid.appendChild(trendItem);
+    });
+
+    container.appendChild(trendGrid);
+
+    return container;
+  }
+
+  /**
    * Create queue item
    */
   createQueueItem(label, finishTime) {
@@ -679,7 +945,124 @@ class DetailPanel extends Component {
   }
 
   /**
-   * Create actions section
+   * Create actions sidebar (vertical button layout for left sidebar)
+   */
+  createActionsSidebar(account) {
+    const container = this.createElement('div', { className: 'actions-sidebar' });
+
+    // Title
+    const title = this.createElement('div', {
+      className: 'sidebar-title'
+    }, 'Műveletek');
+    container.appendChild(title);
+
+    // Vertical action buttons
+    const buttons = this.createElement('div', { className: 'sidebar-buttons' });
+
+    // Build button
+    buttons.appendChild(this.createSidebarButton('🏗️', 'Építés', () => this.handleAction('build', account)));
+
+    // Attack button
+    buttons.appendChild(this.createSidebarButton('⚔️', 'Támadás', () => this.handleAction('attack', account)));
+
+    // Support button
+    buttons.appendChild(this.createSidebarButton('🛡️', 'Támogatás', () => this.handleAction('support', account)));
+
+    // Recruit button
+    buttons.appendChild(this.createSidebarButton('👥', 'Toborzás', () => this.handleAction('recruit', account)));
+
+    container.appendChild(buttons);
+
+    return container;
+  }
+
+  /**
+   * Create sidebar button (icon + label stacked)
+   */
+  createSidebarButton(icon, label, onClick) {
+    const btn = this.createElement('div', {
+      className: 'sidebar-btn',
+      onClick
+    });
+
+    const iconEl = this.createElement('div', { className: 'sidebar-btn-icon' }, icon);
+    btn.appendChild(iconEl);
+
+    const labelEl = this.createElement('div', { className: 'sidebar-btn-label' }, label);
+    btn.appendChild(labelEl);
+
+    return btn;
+  }
+
+  /**
+   * Create navigation sidebar (vertical button layout for navigation)
+   */
+  createNavigationSidebar(account) {
+    const container = this.createElement('div', { className: 'actions-sidebar nav-sidebar' });
+
+    // Title
+    const title = this.createElement('div', {
+      className: 'sidebar-title'
+    }, 'Navigáció');
+    container.appendChild(title);
+
+    // Vertical navigation buttons
+    const buttons = this.createElement('div', { className: 'sidebar-buttons' });
+
+    // Village Overview
+    buttons.appendChild(this.createSidebarButton('🏘️', 'Áttekintés', () => this.handleNavigation('overview', account)));
+
+    // Main Building
+    buttons.appendChild(this.createSidebarButton('🏛️', 'Főépület', () => this.handleNavigation('main', account)));
+
+    // Barracks
+    buttons.appendChild(this.createSidebarButton('⚔️', 'Kaszárnya', () => this.handleNavigation('barracks', account)));
+
+    // Rally Point
+    buttons.appendChild(this.createSidebarButton('🚩', 'Gyülekező', () => this.handleNavigation('place', account)));
+
+    // Statistics
+    buttons.appendChild(this.createSidebarButton('📊', 'Statisztika', () => this.handleNavigation('statistics', account)));
+
+    // Market
+    buttons.appendChild(this.createSidebarButton('🛒', 'Piac', () => this.handleNavigation('market', account)));
+
+    container.appendChild(buttons);
+
+    return container;
+  }
+
+  /**
+   * Handle navigation button click - sends command to master tab
+   */
+  async handleNavigation(screen, account) {
+    console.log(`Navigation: ${screen} for account ${account.accountId}`);
+
+    try {
+      const response = await fetch('/api/commands/navigate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: account.accountId,
+          screen: screen
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Navigation failed');
+      }
+
+      console.log(`Navigation command sent: ${screen}`);
+    } catch (error) {
+      console.error('Failed to navigate:', error);
+      alert(`❌ Navigáció hiba: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create actions section (legacy - kept for compatibility)
    */
   createActionsSection(account) {
     const section = this.createElement('div', { className: 'detail-section' });
@@ -716,6 +1099,33 @@ class DetailPanel extends Component {
       className: 'action-btn',
       onClick
     }, label);
+  }
+
+  /**
+   * Handle fetch statistics button click
+   * Sends command to userscript to navigate to stats page and scrape
+   */
+  async handleFetchStatistics(accountId) {
+    console.log(`Fetching statistics for account: ${accountId}`);
+
+    try {
+      const response = await fetch('/api/commands/fetch-statistics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('📊 Statisztika lekérés elindítva!\nA fiók navigál a statisztika oldalra és betölti az adatokat.');
+      } else {
+        throw new Error(result.error || 'Ismeretlen hiba');
+      }
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
+      alert(`❌ Hiba: ${error.message}`);
+    }
   }
 
   /**
@@ -874,10 +1284,81 @@ class DetailPanel extends Component {
   }
 
   /**
+   * Handle mouse down on resize handle - start resizing
+   */
+  handleMouseDown(e, panel) {
+    e.preventDefault();
+    this.isResizing = true;
+    this.currentPanel = panel;
+
+    // Add dragging class for visual feedback
+    const handle = panel.querySelector('.detail-panel-resize');
+    if (handle) handle.classList.add('dragging');
+
+    // Add document-level listeners
+    document.addEventListener('mousemove', this.handleMouseMove);
+    document.addEventListener('mouseup', this.handleMouseUp);
+
+    // Prevent text selection while dragging
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'ew-resize';
+  }
+
+  /**
+   * Handle mouse move while resizing
+   */
+  handleMouseMove(e) {
+    if (!this.isResizing || !this.currentPanel) return;
+
+    // Calculate new width (from right edge to mouse position)
+    const newWidth = window.innerWidth - e.clientX;
+
+    // Clamp to min/max
+    const clampedWidth = Math.max(this.minWidth, Math.min(this.maxWidth, newWidth));
+
+    // Apply width
+    this.currentPanel.style.width = `${clampedWidth}px`;
+  }
+
+  /**
+   * Handle mouse up - stop resizing and save width
+   */
+  handleMouseUp() {
+    if (!this.isResizing) return;
+
+    this.isResizing = false;
+
+    // Remove dragging class
+    if (this.currentPanel) {
+      const handle = this.currentPanel.querySelector('.detail-panel-resize');
+      if (handle) handle.classList.remove('dragging');
+
+      // Save the final width
+      const finalWidth = parseInt(this.currentPanel.style.width, 10);
+      if (finalWidth) {
+        this.saveWidth(finalWidth);
+      }
+    }
+
+    // Remove document-level listeners
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('mouseup', this.handleMouseUp);
+
+    // Restore normal selection
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+
+    this.currentPanel = null;
+  }
+
+  /**
    * Cleanup on destroy
    */
   destroy() {
     this.stopCountdownUpdates();
+    // Clean up resize listeners
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('mouseup', this.handleMouseUp);
     super.destroy();
   }
 }

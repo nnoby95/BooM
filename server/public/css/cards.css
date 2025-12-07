@@ -248,13 +248,52 @@
     border-left: 3px solid var(--tw-border-dark);
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
     z-index: var(--z-detail-panel);
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     transform: translateX(100%);
     transition: transform var(--transition-normal);
 }
 
 .detail-panel.open {
     transform: translateX(0);
+}
+
+/* Resize Handle */
+.detail-panel-resize {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: ew-resize;
+    background: transparent;
+    transition: background 0.2s ease;
+    z-index: 10;
+}
+
+.detail-panel-resize:hover,
+.detail-panel-resize.dragging {
+    background: rgba(93, 67, 48, 0.5);
+}
+
+.detail-panel-resize::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 40px;
+    background: var(--tw-border-medium);
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.detail-panel-resize:hover::after,
+.detail-panel-resize.dragging::after {
+    opacity: 1;
 }
 
 /* Detail Panel Header */
@@ -297,9 +336,101 @@
     transform: scale(1.2);
 }
 
-/* Detail Panel Body */
+/* Detail Panel Main - Two Column Layout */
+.detail-panel-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Detail Panel Sidebar - Left column with action buttons */
+.detail-panel-sidebar {
+    width: 80px;
+    min-width: 80px;
+    background: var(--tw-bg-medium);
+    border-right: 2px solid var(--tw-border-dark);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Actions Sidebar */
+.actions-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.sidebar-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--tw-text-light);
+    text-align: center;
+    padding: var(--spacing-sm) var(--spacing-xs);
+    background: var(--tw-bg-dark);
+    border-bottom: 1px solid var(--tw-border-dark);
+}
+
+.sidebar-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--spacing-xs);
+}
+
+.sidebar-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-xs);
+    background: linear-gradient(to bottom, #6d5a3a, #4d3a20);
+    border: 1px solid var(--tw-border-dark);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.sidebar-btn:hover {
+    background: linear-gradient(to bottom, #7d6a4a, #5d4a30);
+    transform: translateY(-1px);
+}
+
+.sidebar-btn:active {
+    transform: translateY(0);
+}
+
+.sidebar-btn-icon {
+    font-size: 18px;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.sidebar-btn-label {
+    font-size: 9px;
+    font-weight: bold;
+    color: var(--tw-text-light);
+    text-align: center;
+    line-height: 1.1;
+}
+
+/* Navigation Sidebar - slightly different styling */
+.nav-sidebar .sidebar-title {
+    background: #2d4a3e;
+}
+
+.nav-sidebar .sidebar-btn {
+    background: linear-gradient(to bottom, #3a5a4a, #2a4030);
+}
+
+.nav-sidebar .sidebar-btn:hover {
+    background: linear-gradient(to bottom, #4a6a5a, #3a5040);
+}
+
+/* Detail Panel Body - Right column with content */
 .detail-panel-body {
+    flex: 1;
     padding: var(--spacing-md);
+    overflow-y: auto;
 }
 
 /* Detail Sections */

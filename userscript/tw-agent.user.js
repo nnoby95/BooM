@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TW Controller Agent
 // @namespace    tw-controller
-// @version      1.0.24
+// @version      1.2.0
 // @description  Tribal Wars account control agent
 // @author       TW Controller
 // @match        https://*.tribalwars.*/game.php*
@@ -289,6 +289,22 @@
   let reconnectAttempts = 0;
   let reportTimer = null;
   let isConnected = false;
+  let isMasterTab = false;  // Track if this tab is the master (active) tab
+
+  // ============ MASTER TAB PERSISTENCE ============
+  // Use sessionStorage to persist master status across page navigations
+  const MASTER_STATUS_KEY = 'tw_agent_is_master';
+
+  function saveMasterStatus(isMaster) {
+    sessionStorage.setItem(MASTER_STATUS_KEY, isMaster ? 'true' : 'false');
+    log(`Master status saved to sessionStorage: ${isMaster}`);
+  }
+
+  function loadMasterStatus() {
+    const saved = sessionStorage.getItem(MASTER_STATUS_KEY) === 'true';
+    log(`Master status loaded from sessionStorage: ${saved}`);
+    return saved;
+  }
 
   // ============ UTILITY FUNCTIONS ============
 
@@ -543,6 +559,687 @@
     return null;
   }
 
+  // ============ QUICKBAR STATUS INJECTION ============
+  // Injects master/standby status and quick navigation into game's quickbar
+
+  /**
+   * Get TW image URL based on game assets
+   */
+  function getTWImageUrl(imageName) {
+    // Use the game's graphic path
+    const graphicPath = unsafeWindow.game_data?.link_base_pure || 'https://dsen.innogamescdn.com/asset/2f86a37/graphic/';
+    return `${graphicPath}${imageName}`;
+  }
+
+  /**
+   * Inject quickbar styles
+   */
+  function injectQuickbarStyles() {
+    if (document.getElementById('tw-agent-quickbar-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'tw-agent-quickbar-styles';
+    style.textContent = `
+      /* Master badge - green glow */
+      .tw-agent-master-badge {
+        background: linear-gradient(to bottom, #2d5016, #1a3009) !important;
+        border: 1px solid #4caf50 !important;
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+        border-radius: 3px;
+        margin-right: 3px !important;
+      }
+
+      .tw-agent-master-badge a,
+      .tw-agent-master-badge span {
+        color: #7fff00 !important;
+        font-weight: bold;
+        text-shadow: 0 0 3px rgba(76, 175, 80, 0.8);
+        padding: 2px 8px !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* Standby badge - gray */
+      .tw-agent-standby-badge {
+        background: linear-gradient(to bottom, #3a3a3a, #252525) !important;
+        border: 1px solid #666 !important;
+        border-radius: 3px;
+        margin-right: 3px !important;
+      }
+
+      .tw-agent-standby-badge a,
+      .tw-agent-standby-badge span {
+        color: #999 !important;
+        padding: 2px 8px !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* Quick nav items */
+      .tw-agent-nav-item {
+        margin-right: 2px !important;
+      }
+
+      .tw-agent-nav-item a {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 6px !important;
+      }
+
+      .tw-agent-nav-item img {
+        width: 14px;
+        height: 14px;
+        vertical-align: middle;
+      }
+
+      /* Separator */
+      .tw-agent-separator {
+        color: #8b6914 !important;
+        padding: 0 4px !important;
+        font-weight: bold;
+      }
+
+      /* Refresh button */
+      .tw-agent-refresh-btn {
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .tw-agent-refresh-btn:hover {
+        background: linear-gradient(to bottom, #4a4a2a, #3a3a1a) !important;
+      }
+
+      .tw-agent-refresh-btn.refreshing img {
+        animation: tw-agent-spin 1s linear infinite;
+      }
+
+      @keyframes tw-agent-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      /* Status dot animation */
+      .tw-agent-status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+      }
+
+      .tw-agent-status-dot.master {
+        background: #4caf50;
+        box-shadow: 0 0 6px #4caf50;
+        animation: tw-agent-pulse 2s ease-in-out infinite;
+      }
+
+      .tw-agent-status-dot.standby {
+        background: #888;
+      }
+
+      @keyframes tw-agent-pulse {
+        0%, 100% { opacity: 1; box-shadow: 0 0 6px #4caf50; }
+        50% { opacity: 0.7; box-shadow: 0 0 12px #4caf50; }
+      }
+
+      /* ============ CUSTOM STATUS BAR (non-premium) ============ */
+      .tw-agent-custom-statusbar {
+        background: linear-gradient(to bottom, #4a3c28 0%, #3d3122 50%, #2a2115 100%);
+        border: 1px solid #5d4c2f;
+        border-radius: 4px;
+        padding: 6px 12px;
+        margin: 8px 0;
+        position: relative;
+        z-index: 100;
+        box-sizing: border-box;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      }
+
+      .tw-agent-statusbar-inner {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .tw-agent-status-item {
+        padding: 3px 10px;
+        border-radius: 3px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: bold;
+      }
+
+      .tw-agent-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        background: linear-gradient(to bottom, #4a3c28, #3a2e1f);
+        border: 1px solid #5d4c2f;
+        border-radius: 3px;
+        color: #c9a86c !important;
+        text-decoration: none !important;
+        font-size: 11px;
+        transition: all 0.2s ease;
+      }
+
+      .tw-agent-nav-link:hover {
+        background: linear-gradient(to bottom, #5a4c38, #4a3e2f);
+        border-color: #7d6c4f;
+        color: #e9c88c !important;
+      }
+
+      .tw-agent-nav-link img {
+        width: 14px;
+        height: 14px;
+      }
+
+      .tw-agent-custom-statusbar .tw-agent-separator {
+        color: #5d4c2f;
+        font-weight: bold;
+        padding: 0 2px;
+      }
+
+      .tw-agent-custom-statusbar .tw-agent-refresh-btn.refreshing img {
+        animation: tw-agent-spin 1s linear infinite;
+      }
+
+      /* Make Master button */
+      .tw-agent-make-master-btn {
+        background: linear-gradient(to bottom, #5a4020, #3a2810) !important;
+        border: 1px solid #8b6914 !important;
+        color: #ffd700 !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .tw-agent-make-master-btn:hover {
+        background: linear-gradient(to bottom, #7a5030, #5a3820) !important;
+        border-color: #ffd700 !important;
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+      }
+
+      .tw-agent-make-master-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      /* Hide make master button when already master */
+      .tw-agent-master-active .tw-agent-make-master-btn {
+        display: none;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /**
+   * Create a quickbar item element
+   */
+  function createQuickbarItem(text, href, className = '', iconSrc = null) {
+    const li = document.createElement('li');
+    li.className = `quickbar_item tw-agent-injected ${className}`;
+
+    if (href) {
+      const link = document.createElement('a');
+      link.href = href;
+      link.className = 'quickbar_link';
+
+      if (iconSrc) {
+        const img = document.createElement('img');
+        img.src = iconSrc;
+        img.style.cssText = 'width: 14px; height: 14px; vertical-align: middle;';
+        link.appendChild(img);
+      }
+
+      const textSpan = document.createElement('span');
+      textSpan.textContent = text;
+      link.appendChild(textSpan);
+
+      li.appendChild(link);
+    } else {
+      const span = document.createElement('span');
+
+      if (iconSrc) {
+        const img = document.createElement('img');
+        img.src = iconSrc;
+        img.style.cssText = 'width: 14px; height: 14px; vertical-align: middle;';
+        span.appendChild(img);
+      }
+
+      const textNode = document.createTextNode(text);
+      span.appendChild(textNode);
+
+      li.appendChild(span);
+    }
+
+    return li;
+  }
+
+  /**
+   * Inject status and navigation into quickbar (or create custom bar if no premium)
+   */
+  function injectQuickbarStatus() {
+    // Inject styles first
+    injectQuickbarStyles();
+
+    // Try native quickbar first (premium users)
+    const nativeQuickbar = document.querySelector('#quickbar_contents ul.quickbar');
+
+    if (nativeQuickbar && nativeQuickbar.children.length > 0) {
+      // Premium user - inject into existing quickbar
+      injectIntoNativeQuickbar(nativeQuickbar);
+    } else {
+      // Non-premium user - create our own status bar
+      injectCustomStatusBar();
+    }
+  }
+
+  /**
+   * Inject into native quickbar (for premium users)
+   */
+  function injectIntoNativeQuickbar(quickbar) {
+    // Remove old injected items
+    const oldItems = quickbar.querySelectorAll('.tw-agent-injected');
+    oldItems.forEach(item => item.remove());
+
+    // Get game's graphic base URL
+    const graphicBase = unsafeWindow.image_base || '/graphic/';
+    const villageId = unsafeWindow.game_data?.village?.id || '';
+    const baseUrl = `/game.php?village=${villageId}&screen=`;
+
+    // Create elements
+    const { statusBadge, navItems, refreshBtn, separator } = createQuickbarElements(graphicBase, baseUrl);
+
+    // Insert all items at the beginning (in reverse order)
+    quickbar.insertBefore(separator, quickbar.firstChild);
+    quickbar.insertBefore(refreshBtn, quickbar.firstChild);
+
+    // Add nav items in reverse order
+    for (let i = navItems.length - 1; i >= 0; i--) {
+      quickbar.insertBefore(navItems[i], quickbar.firstChild);
+    }
+
+    quickbar.insertBefore(statusBadge, quickbar.firstChild);
+
+    log(`Quickbar injected (native): ${isMasterTab ? 'MASTER' : 'STANDBY'} tab`);
+  }
+
+  /**
+   * Create custom status bar for non-premium users
+   */
+  function injectCustomStatusBar() {
+    // Remove old custom bar if exists
+    const oldBar = document.getElementById('tw-agent-custom-bar');
+    if (oldBar) oldBar.remove();
+
+    // Find the best injection point - prioritize content area for visibility
+    // Try multiple locations from most preferred to fallback
+    const insertionPoints = [
+      // 1. Inside content container, at the very top
+      { container: document.querySelector('#contentContainer'), position: 'prepend' },
+      // 2. Before the main content value
+      { container: document.querySelector('#content_value'), position: 'before' },
+      // 3. After header info table (inside visible area)
+      { container: document.querySelector('table#header_info'), position: 'after' },
+      // 4. Inside main layout wrapper
+      { container: document.querySelector('#ds_body'), position: 'prepend' },
+      // 5. Fallback: before main_layout
+      { container: document.querySelector('#main_layout'), position: 'before' }
+    ];
+
+    let insertConfig = null;
+    for (const point of insertionPoints) {
+      if (point.container) {
+        insertConfig = point;
+        break;
+      }
+    }
+
+    if (!insertConfig) {
+      log('No injection point found - retrying in 1s');
+      setTimeout(injectQuickbarStatus, 1000);
+      return;
+    }
+
+    log(`Status bar injection point: ${insertConfig.container.id || insertConfig.container.tagName} (${insertConfig.position})`);
+
+    // Get game's graphic base URL
+    const graphicBase = unsafeWindow.image_base || '/graphic/';
+    const villageId = unsafeWindow.game_data?.village?.id || '';
+    const baseUrl = `/game.php?village=${villageId}&screen=`;
+
+    // Create custom bar container
+    const customBar = document.createElement('div');
+    customBar.id = 'tw-agent-custom-bar';
+    customBar.className = 'tw-agent-custom-statusbar';
+
+    // Create inner container for flex layout
+    const innerBar = document.createElement('div');
+    innerBar.className = 'tw-agent-statusbar-inner';
+
+    // Create elements
+    const { statusBadge, navItemElements, refreshBtn, makeMasterBtn } = createStatusBarElements(graphicBase, baseUrl);
+
+    // Add status badge
+    innerBar.appendChild(statusBadge);
+
+    // Add Make Master button (only visible when STANDBY)
+    innerBar.appendChild(makeMasterBtn);
+
+    // Add separator
+    const sep1 = document.createElement('span');
+    sep1.className = 'tw-agent-separator';
+    sep1.textContent = '|';
+    innerBar.appendChild(sep1);
+
+    // Add nav items
+    navItemElements.forEach(item => innerBar.appendChild(item));
+
+    // Add separator
+    const sep2 = document.createElement('span');
+    sep2.className = 'tw-agent-separator';
+    sep2.textContent = '|';
+    innerBar.appendChild(sep2);
+
+    // Add refresh button
+    innerBar.appendChild(refreshBtn);
+
+    customBar.appendChild(innerBar);
+
+    // Add class for master state (used to hide make master button)
+    if (isMasterTab) {
+      customBar.classList.add('tw-agent-master-active');
+    }
+
+    // Insert based on position strategy
+    const { container, position } = insertConfig;
+    switch (position) {
+      case 'prepend':
+        container.insertBefore(customBar, container.firstChild);
+        break;
+      case 'before':
+        container.parentNode.insertBefore(customBar, container);
+        break;
+      case 'after':
+        container.parentNode.insertBefore(customBar, container.nextSibling);
+        break;
+    }
+
+    log(`Custom status bar injected: ${isMasterTab ? 'MASTER' : 'STANDBY'} tab`);
+  }
+
+  /**
+   * Create quickbar elements for native quickbar
+   */
+  function createQuickbarElements(graphicBase, baseUrl) {
+    // Status Badge
+    const statusBadge = document.createElement('li');
+    statusBadge.className = `quickbar_item tw-agent-injected ${isMasterTab ? 'tw-agent-master-badge' : 'tw-agent-standby-badge'}`;
+    statusBadge.id = 'tw-agent-status-badge';
+
+    const statusSpan = document.createElement('span');
+    const statusDot = document.createElement('span');
+    statusDot.className = `tw-agent-status-dot ${isMasterTab ? 'master' : 'standby'}`;
+    statusSpan.appendChild(statusDot);
+    statusSpan.appendChild(document.createTextNode(isMasterTab ? 'MASTER' : 'STANDBY'));
+    statusBadge.appendChild(statusSpan);
+
+    // Nav items
+    const navConfig = [
+      { text: 'Áttekintés', screen: 'overview', icon: 'overview/village_info.png' },
+      { text: 'Főép.', screen: 'main', icon: 'buildings/main.png' },
+      { text: 'Barakk', screen: 'barracks', icon: 'buildings/barracks.png' },
+      { text: 'Gyülekező', screen: 'place', icon: 'buildings/place.png' },
+      { text: 'Statisztikák', screen: 'info_player&mode=stats_own', icon: 'icons/ally.png' }
+    ];
+
+    const navItems = navConfig.map(item =>
+      createQuickbarItem(item.text, baseUrl + item.screen, 'tw-agent-nav-item', graphicBase + item.icon)
+    );
+
+    // Refresh button
+    const refreshBtn = document.createElement('li');
+    refreshBtn.className = 'quickbar_item tw-agent-injected tw-agent-nav-item tw-agent-refresh-btn';
+    refreshBtn.title = 'Adatok frissítése (bármely tab)';
+
+    const refreshLink = document.createElement('a');
+    refreshLink.href = '#';
+    refreshLink.className = 'quickbar_link';
+
+    const refreshImg = document.createElement('img');
+    refreshImg.src = graphicBase + 'icons/refresh.png';
+    refreshImg.style.cssText = 'width: 14px; height: 14px;';
+    refreshLink.appendChild(refreshImg);
+    refreshBtn.appendChild(refreshLink);
+
+    refreshBtn.addEventListener('click', handleRefreshClick(baseUrl));
+
+    // Separator
+    const separator = document.createElement('li');
+    separator.className = 'quickbar_item tw-agent-injected';
+    separator.innerHTML = '<span class="tw-agent-separator">|</span>';
+
+    return { statusBadge, navItems, refreshBtn, separator };
+  }
+
+  /**
+   * Create status bar elements for custom bar (non-premium)
+   */
+  function createStatusBarElements(graphicBase, baseUrl) {
+    // Status Badge
+    const statusBadge = document.createElement('div');
+    statusBadge.className = `tw-agent-status-item ${isMasterTab ? 'tw-agent-master-badge' : 'tw-agent-standby-badge'}`;
+    statusBadge.id = 'tw-agent-status-badge';
+
+    const statusDot = document.createElement('span');
+    statusDot.className = `tw-agent-status-dot ${isMasterTab ? 'master' : 'standby'}`;
+    statusBadge.appendChild(statusDot);
+    statusBadge.appendChild(document.createTextNode(isMasterTab ? 'MASTER' : 'STANDBY'));
+
+    // Nav items
+    const navConfig = [
+      { text: 'Áttekintés', screen: 'overview', icon: 'overview/village_info.png' },
+      { text: 'Főép.', screen: 'main', icon: 'buildings/main.png' },
+      { text: 'Barakk', screen: 'barracks', icon: 'buildings/barracks.png' },
+      { text: 'Gyülekező', screen: 'place', icon: 'buildings/place.png' },
+      { text: 'Statisztikák', screen: 'info_player&mode=stats_own', icon: 'icons/ally.png' }
+    ];
+
+    const navItemElements = navConfig.map(item => {
+      const navItem = document.createElement('a');
+      navItem.href = baseUrl + item.screen;
+      navItem.className = 'tw-agent-nav-link';
+
+      const img = document.createElement('img');
+      img.src = graphicBase + item.icon;
+      navItem.appendChild(img);
+
+      const text = document.createElement('span');
+      text.textContent = item.text;
+      navItem.appendChild(text);
+
+      return navItem;
+    });
+
+    // Refresh button
+    const refreshBtn = document.createElement('a');
+    refreshBtn.href = '#';
+    refreshBtn.className = 'tw-agent-nav-link tw-agent-refresh-btn';
+    refreshBtn.title = 'Adatok frissítése';
+
+    const refreshImg = document.createElement('img');
+    refreshImg.src = graphicBase + 'icons/refresh.png';
+    refreshBtn.appendChild(refreshImg);
+
+    const refreshText = document.createElement('span');
+    refreshText.textContent = 'Frissítés';
+    refreshBtn.appendChild(refreshText);
+
+    refreshBtn.addEventListener('click', handleRefreshClick(baseUrl));
+
+    // Make Master button (only shown when STANDBY)
+    const makeMasterBtn = document.createElement('a');
+    makeMasterBtn.href = '#';
+    makeMasterBtn.className = 'tw-agent-nav-link tw-agent-make-master-btn';
+    makeMasterBtn.id = 'tw-agent-make-master-btn';
+    makeMasterBtn.title = 'Ezt a tabot MASTER-ré teszi';
+    makeMasterBtn.style.display = isMasterTab ? 'none' : 'inline-flex';
+
+    const crownIcon = document.createElement('span');
+    crownIcon.textContent = '👑';
+    crownIcon.style.fontSize = '12px';
+    makeMasterBtn.appendChild(crownIcon);
+
+    const makeMasterText = document.createElement('span');
+    makeMasterText.textContent = 'MASTER';
+    makeMasterBtn.appendChild(makeMasterText);
+
+    makeMasterBtn.addEventListener('click', handleMakeMasterClick);
+
+    return { statusBadge, navItemElements, refreshBtn, makeMasterBtn };
+  }
+
+  /**
+   * Handle "Make Master" button click
+   */
+  function handleMakeMasterClick(e) {
+    e.preventDefault();
+
+    if (isMasterTab) {
+      log('Already master - ignoring click');
+      return;
+    }
+
+    log('Requesting master status...');
+
+    // Send request to server
+    send('requestMaster', {
+      sessionId: sessionId,
+      reason: 'User requested via UI'
+    });
+
+    // Visual feedback
+    const btn = e.currentTarget;
+    btn.classList.add('disabled');
+    btn.textContent = 'Requesting...';
+  }
+
+  /**
+   * Handle refresh button click
+   */
+  function handleRefreshClick(baseUrl) {
+    return async (e) => {
+      e.preventDefault();
+      const btn = e.currentTarget;
+      btn.classList.add('refreshing');
+      log('Manual refresh triggered');
+
+      const currentScreen = new URLSearchParams(window.location.search).get('screen');
+      if (currentScreen !== 'overview') {
+        window.location.href = baseUrl + 'overview';
+      } else {
+        reportData();
+        setTimeout(() => btn.classList.remove('refreshing'), 1000);
+      }
+    };
+  }
+
+  /**
+   * Update quickbar status badge (when master status changes)
+   */
+  function updateQuickbarStatus() {
+    const badge = document.getElementById('tw-agent-status-badge');
+    if (!badge) {
+      injectQuickbarStatus();
+      return;
+    }
+
+    // Check if it's native quickbar (li element) or custom bar (div element)
+    const isNative = badge.tagName === 'LI';
+
+    if (isNative) {
+      // Native quickbar - update li class
+      badge.className = `quickbar_item tw-agent-injected ${isMasterTab ? 'tw-agent-master-badge' : 'tw-agent-standby-badge'}`;
+
+      // Update content
+      const statusSpan = badge.querySelector('span');
+      if (statusSpan) {
+        statusSpan.innerHTML = '';
+        const statusDot = document.createElement('span');
+        statusDot.className = `tw-agent-status-dot ${isMasterTab ? 'master' : 'standby'}`;
+        statusSpan.appendChild(statusDot);
+        statusSpan.appendChild(document.createTextNode(isMasterTab ? 'MASTER' : 'STANDBY'));
+      }
+    } else {
+      // Custom status bar - update div class
+      badge.className = `tw-agent-status-item ${isMasterTab ? 'tw-agent-master-badge' : 'tw-agent-standby-badge'}`;
+
+      // Update content - clear and rebuild
+      badge.innerHTML = '';
+      const statusDot = document.createElement('span');
+      statusDot.className = `tw-agent-status-dot ${isMasterTab ? 'master' : 'standby'}`;
+      badge.appendChild(statusDot);
+      badge.appendChild(document.createTextNode(isMasterTab ? 'MASTER' : 'STANDBY'));
+    }
+
+    // Update Make Master button visibility
+    const makeMasterBtn = document.getElementById('tw-agent-make-master-btn');
+    if (makeMasterBtn) {
+      makeMasterBtn.style.display = isMasterTab ? 'none' : 'inline-flex';
+      // Reset button state if it was in "requesting" state
+      if (!isMasterTab) {
+        makeMasterBtn.classList.remove('disabled');
+        makeMasterBtn.innerHTML = '<span style="font-size:12px">👑</span><span>MASTER</span>';
+      }
+    }
+
+    // Update custom bar class
+    const customBar = document.getElementById('tw-agent-custom-bar');
+    if (customBar) {
+      if (isMasterTab) {
+        customBar.classList.add('tw-agent-master-active');
+      } else {
+        customBar.classList.remove('tw-agent-master-active');
+      }
+    }
+
+    // Update browser tab title
+    updateTabTitle();
+
+    log(`Status badge updated: ${isMasterTab ? 'MASTER' : 'STANDBY'}`);
+  }
+
+  /**
+   * Update browser tab title with MASTER/STANDBY prefix
+   */
+  let originalTitle = null;
+
+  function updateTabTitle() {
+    // Store original title on first call
+    if (originalTitle === null) {
+      originalTitle = document.title;
+    }
+
+    // Remove any existing prefix
+    let baseTitle = originalTitle;
+    if (baseTitle.startsWith('[MASTER] ') || baseTitle.startsWith('[STANDBY] ')) {
+      baseTitle = baseTitle.replace(/^\[(MASTER|STANDBY)\] /, '');
+    }
+
+    // Add new prefix
+    const prefix = isMasterTab ? '[MASTER]' : '[STANDBY]';
+    document.title = `${prefix} ${baseTitle}`;
+
+    log(`Tab title updated: ${document.title}`);
+  }
+
   // ============ CONNECTION LAYER ============
 
   /**
@@ -685,6 +1382,10 @@
         handleRegistered(message);
         break;
 
+      case 'masterStatusChanged':
+        handleMasterStatusChanged(message);
+        break;
+
       case 'sendTroops':
         handleSendTroops(message);
         break;
@@ -705,6 +1406,14 @@
         handlePing(message);
         break;
 
+      case 'fetchStatistics':
+        handleFetchStatistics(message);
+        break;
+
+      case 'navigate':
+        handleNavigate(message);
+        break;
+
       default:
         log('Unknown message type:', message.type);
     }
@@ -712,28 +1421,220 @@
 
   function handleRegistered(message) {
     sessionId = message.sessionId;
-    log('Registered with sessionId:', sessionId);
+    isMasterTab = message.isMaster || false;
 
-    // Start periodic reporting
-    scheduleReport();
+    // IMPORTANT: Save master status to sessionStorage for persistence across navigation
+    saveMasterStatus(isMasterTab);
 
-    // Send immediate report
-    reportData();
+    log(`Registered with sessionId: ${sessionId}`);
+    log(`Tab role: ${isMasterTab ? 'MASTER' : 'STANDBY'}`);
+    log(`Total connections: ${message.connectionCount || 1}`);
+
+    // Inject quickbar status
+    injectQuickbarStatus();
+
+    // Update browser tab title
+    updateTabTitle();
+
+    // Only master tab does periodic reporting
+    if (isMasterTab) {
+      scheduleReport();
+      // Send immediate report
+      reportData();
+    } else {
+      log('STANDBY tab - not scheduling reports (master handles this)');
+    }
+  }
+
+  function handleMasterStatusChanged(message) {
+    const wasMaster = isMasterTab;
+    isMasterTab = message.isMaster;
+
+    // IMPORTANT: Save master status to sessionStorage for persistence across navigation
+    saveMasterStatus(isMasterTab);
+
+    log(`Master status changed: ${wasMaster ? 'MASTER' : 'STANDBY'} -> ${isMasterTab ? 'MASTER' : 'STANDBY'}`);
+    log(`Reason: ${message.reason || 'unknown'}`);
+
+    // Update quickbar badge
+    updateQuickbarStatus();
+
+    // If promoted to master, start reporting
+    if (isMasterTab && !wasMaster) {
+      log('Promoted to MASTER - starting periodic reports');
+      scheduleReport();
+      reportData();
+    }
+
+    // If demoted from master, stop reporting
+    if (!isMasterTab && wasMaster) {
+      log('Demoted to STANDBY - stopping periodic reports');
+      if (reportTimer) {
+        clearTimeout(reportTimer);
+        reportTimer = null;
+      }
+    }
   }
 
   function handleSendTroops(message) {
+    // Only master tab executes commands
+    if (!isMasterTab) {
+      log('Ignoring sendTroops command - not master tab');
+      return;
+    }
     log('Send troops command:', message);
     executeSendTroops(message);
   }
 
   function handleBuildBuilding(message) {
+    // Only master tab executes commands
+    if (!isMasterTab) {
+      log('Ignoring buildBuilding command - not master tab');
+      return;
+    }
     log('Build building command:', message);
     executeBuildBuilding(message);
   }
 
   function handleRecruitTroops(message) {
+    // Only master tab executes commands
+    if (!isMasterTab) {
+      log('Ignoring recruitTroops command - not master tab');
+      return;
+    }
     log('Recruit troops command:', message);
     executeRecruitTroops(message);
+  }
+
+  /**
+   * Handle fetchStatistics command from server
+   * Navigates to statistics page, waits for load, scrapes data, and reports back
+   */
+  function handleFetchStatistics(message) {
+    // Only master tab executes commands
+    if (!isMasterTab) {
+      log('Ignoring fetchStatistics command - not master tab');
+      return;
+    }
+
+    log('Fetch statistics command received:', message);
+
+    const actionId = message.actionId;
+
+    // Check if we're already on the statistics page
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('screen') === 'info_player' && urlParams.get('mode') === 'stats_own') {
+      log('Already on statistics page - scraping now');
+      // Already on page, scrape immediately
+      const stats = scrapeStatistics();
+      if (stats) {
+        // Send data report
+        reportData();
+        sendCommandResult(actionId, true, 'Statistics scraped successfully');
+      } else {
+        sendCommandResult(actionId, false, 'Failed to scrape statistics');
+      }
+      return;
+    }
+
+    // Navigate to statistics page
+    log('Navigating to statistics page...');
+
+    // Store actionId for when page loads
+    sessionStorage.setItem('tw_pending_fetch_stats', actionId);
+
+    // Build the statistics URL
+    const baseUrl = window.location.href.split('?')[0].replace(/\/game\.php.*/, '/game.php');
+    const villageId = unsafeWindow.game_data?.village?.id || urlParams.get('village');
+    const statsUrl = `${baseUrl}?village=${villageId}&screen=info_player&mode=stats_own`;
+
+    log('Navigating to:', statsUrl);
+    window.location.href = statsUrl;
+  }
+
+  /**
+   * Handle navigate command - navigate to a specific game screen
+   */
+  function handleNavigate(message) {
+    // Only master tab executes commands
+    if (!isMasterTab) {
+      log('Ignoring navigate command - not master tab');
+      return;
+    }
+
+    const screen = message.screen;
+    const actionId = message.actionId;
+
+    log(`Navigate command received: ${screen}`);
+
+    // Build the navigation URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const baseUrl = window.location.href.split('?')[0].replace(/\/game\.php.*/, '/game.php');
+    const villageId = unsafeWindow.game_data?.village?.id || urlParams.get('village');
+
+    let targetUrl;
+
+    // Map screen names to TW URLs
+    switch (screen) {
+      case 'overview':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=overview`;
+        break;
+      case 'main':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=main`;
+        break;
+      case 'barracks':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=barracks`;
+        break;
+      case 'stable':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=stable`;
+        break;
+      case 'garage':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=garage`;
+        break;
+      case 'smith':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=smith`;
+        break;
+      case 'place':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=place`;
+        break;
+      case 'market':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=market`;
+        break;
+      case 'wood':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=wood`;
+        break;
+      case 'stone':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=stone`;
+        break;
+      case 'iron':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=iron`;
+        break;
+      case 'farm':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=farm`;
+        break;
+      case 'storage':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=storage`;
+        break;
+      case 'wall':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=wall`;
+        break;
+      case 'statue':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=statue`;
+        break;
+      case 'snob':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=snob`;
+        break;
+      case 'statistics':
+        targetUrl = `${baseUrl}?village=${villageId}&screen=info_player&mode=stats_own`;
+        break;
+      default:
+        log(`Unknown screen: ${screen}`);
+        sendCommandResult(actionId, false, `Unknown screen: ${screen}`);
+        return;
+    }
+
+    log(`Navigating to: ${targetUrl}`);
+    window.location.href = targetUrl;
   }
 
   function handleRequestRefresh(message) {
@@ -756,6 +1657,10 @@
       return;
     }
 
+    // Check if this tab was master before navigation (persisted in sessionStorage)
+    const wasMaster = loadMasterStatus();
+    log(`Registering with wasMaster=${wasMaster}`);
+
     send('register', {
       apiKey: CONFIG.apiKey,
       accountId: accountInfo.accountId,
@@ -763,7 +1668,8 @@
       villageId: villageInfo.villageId,
       villageName: villageInfo.villageName,
       coords: villageInfo.coords,
-      playerName: accountInfo.playerName
+      playerName: accountInfo.playerName,
+      wasMaster: wasMaster  // Tell server this tab was master before page navigation
     });
   }
 
@@ -1049,6 +1955,168 @@
     }
   }
 
+  /**
+   * Scrape player statistics from the stats page
+   * Only works on screen=info_player&mode=stats_own
+   */
+  function scrapeStatistics() {
+    try {
+      // Check if we're on the statistics page
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('screen') !== 'info_player' || urlParams.get('mode') !== 'stats_own') {
+        log('Not on statistics page - skipping statistics scrape');
+        return null;
+      }
+
+      log('On statistics page - scraping data...');
+
+      const statistics = {
+        scrapedAt: Date.now(),
+        playerPoints: [],
+        playerVillages: [],
+        playerRank: [],
+        tribePoints: [],
+        villagesLooted: [],
+        lootedResources: [],
+        enemyUnitsKilled: [],
+        troopGains: [],
+        troopLosses: [],
+        resourceSpending: {}
+      };
+
+      // Get all script content from the page
+      const scripts = document.querySelectorAll('script');
+      const scriptContent = Array.from(scripts).map(s => s.textContent).join('\n');
+
+      // Extract graph data using regex patterns
+      // Pattern: InfoPlayer.Stats.createGraph('graph_name', 'type', [[data]])
+
+      // Player Points
+      const playerPointsMatch = scriptContent.match(/createGraph\s*\(\s*['"]graph_player_points['"]\s*,\s*['"]line['"]\s*,\s*(\[\[.*?\]\])\s*\)/s);
+      if (playerPointsMatch) {
+        try {
+          statistics.playerPoints = JSON.parse(playerPointsMatch[1]);
+          log(`Player points: ${statistics.playerPoints.length} data points`);
+        } catch (e) { log('Failed to parse player points'); }
+      }
+
+      // Player Villages
+      const playerVillagesMatch = scriptContent.match(/createGraph\s*\(\s*['"]graph_player_villages['"]\s*,\s*['"]line['"]\s*,\s*(\[\[.*?\]\])\s*\)/s);
+      if (playerVillagesMatch) {
+        try {
+          statistics.playerVillages = JSON.parse(playerVillagesMatch[1]);
+          log(`Player villages: ${statistics.playerVillages.length} data points`);
+        } catch (e) { log('Failed to parse player villages'); }
+      }
+
+      // Player Rank (special handling - data is in var data = [...])
+      const playerRankMatch = scriptContent.match(/graph_player_rank[\s\S]*?var\s+data\s*=\s*\[\{data:\s*(\[\[.*?\]\])/);
+      if (playerRankMatch) {
+        try {
+          statistics.playerRank = JSON.parse(playerRankMatch[1]);
+          log(`Player rank: ${statistics.playerRank.length} data points`);
+        } catch (e) { log('Failed to parse player rank'); }
+      }
+
+      // Tribe Points
+      const tribePointsMatch = scriptContent.match(/createGraph\s*\(\s*['"]graph_ally_points['"]\s*,\s*['"]line['"]\s*,\s*(\[\[.*?\]\])\s*\)/s);
+      if (tribePointsMatch) {
+        try {
+          statistics.tribePoints = JSON.parse(tribePointsMatch[1]);
+          log(`Tribe points: ${statistics.tribePoints.length} data points`);
+        } catch (e) { log('Failed to parse tribe points'); }
+      }
+
+      // Villages Looted (bar chart)
+      const villagesLootedMatch = scriptContent.match(/createGraph\s*\(\s*['"]graph_villages_looted['"]\s*,\s*['"]bar['"]\s*,\s*(\[\[.*?\]\])\s*\)/s);
+      if (villagesLootedMatch) {
+        try {
+          statistics.villagesLooted = JSON.parse(villagesLootedMatch[1]);
+          log(`Villages looted: ${statistics.villagesLooted.length} data points`);
+        } catch (e) { log('Failed to parse villages looted'); }
+      }
+
+      // Looted Resources (bar chart)
+      const lootedResourcesMatch = scriptContent.match(/createGraph\s*\(\s*['"]graph_loot['"]\s*,\s*['"]bar['"]\s*,\s*(\[\[.*?\]\])\s*\)/s);
+      if (lootedResourcesMatch) {
+        try {
+          statistics.lootedResources = JSON.parse(lootedResourcesMatch[1]);
+          log(`Looted resources: ${statistics.lootedResources.length} data points`);
+        } catch (e) { log('Failed to parse looted resources'); }
+      }
+
+      // Enemy Units Killed (bar chart)
+      const enemyUnitsMatch = scriptContent.match(/createGraph\s*\(\s*['"]graph_enemy_units['"]\s*,\s*['"]bar['"]\s*,\s*(\[\[.*?\]\])\s*\)/s);
+      if (enemyUnitsMatch) {
+        try {
+          statistics.enemyUnitsKilled = JSON.parse(enemyUnitsMatch[1]);
+          log(`Enemy units killed: ${statistics.enemyUnitsKilled.length} data points`);
+        } catch (e) { log('Failed to parse enemy units killed'); }
+      }
+
+      // Troop Gains/Losses (two datasets in var data = [...])
+      const troopDiffMatch = scriptContent.match(/graph_units_diff[\s\S]*?var\s+data\s*=\s*\[\s*\{\s*data:\s*(\[\[.*?\]\])\s*,\s*color:\s*['"]green['"]\s*\}\s*,\s*\{\s*data:\s*(\[\[.*?\]\]|\[\])/s);
+      if (troopDiffMatch) {
+        try {
+          statistics.troopGains = JSON.parse(troopDiffMatch[1]);
+          log(`Troop gains: ${statistics.troopGains.length} data points`);
+          if (troopDiffMatch[2] && troopDiffMatch[2] !== '[]') {
+            statistics.troopLosses = JSON.parse(troopDiffMatch[2]);
+            log(`Troop losses: ${statistics.troopLosses.length} data points`);
+          }
+        } catch (e) { log('Failed to parse troop gains/losses'); }
+      }
+
+      // Resource Spending (stacked bar with multiple categories)
+      // This one is more complex - extract the breakdown
+      const spendingCategories = ['Egységek', 'Épületek', 'Lovag', 'Fejlesztés', 'Kereskedelem'];
+      const spendingMatch = scriptContent.match(/graph_resource_spending[\s\S]*?var\s+data\s*=\s*\[\];([\s\S]*?)var\s+graph\s*=/);
+      if (spendingMatch) {
+        const spendingContent = spendingMatch[1];
+
+        spendingCategories.forEach(category => {
+          const categoryMatch = spendingContent.match(new RegExp(`label:\\s*['"]${category}['"][\\s\\S]*?data:\\s*(\\[\\[.*?\\]\\])`, 's'));
+          if (categoryMatch) {
+            try {
+              statistics.resourceSpending[category] = JSON.parse(categoryMatch[1]);
+              log(`Resource spending (${category}): ${statistics.resourceSpending[category].length} data points`);
+            } catch (e) { log(`Failed to parse spending for ${category}`); }
+          }
+        });
+      }
+
+      // Calculate summary values (latest data points)
+      const getLatestValue = (dataArray) => {
+        if (!dataArray || dataArray.length === 0) return 0;
+        return parseInt(dataArray[dataArray.length - 1][1]) || 0;
+      };
+
+      const getTotalFromBar = (dataArray) => {
+        if (!dataArray || dataArray.length === 0) return 0;
+        return dataArray.reduce((sum, item) => sum + (parseInt(item[1]) || 0), 0);
+      };
+
+      statistics.summary = {
+        currentPoints: getLatestValue(statistics.playerPoints),
+        currentVillages: getLatestValue(statistics.playerVillages),
+        currentRank: getLatestValue(statistics.playerRank),
+        currentTribePoints: getLatestValue(statistics.tribePoints),
+        totalVillagesLooted: getTotalFromBar(statistics.villagesLooted),
+        totalResourcesLooted: getTotalFromBar(statistics.lootedResources),
+        totalEnemyKilled: getTotalFromBar(statistics.enemyUnitsKilled),
+        totalTroopGains: getTotalFromBar(statistics.troopGains),
+        totalTroopLosses: getTotalFromBar(statistics.troopLosses)
+      };
+
+      log('Statistics summary:', statistics.summary);
+      return statistics;
+
+    } catch (err) {
+      error('Failed to scrape statistics:', err);
+      return null;
+    }
+  }
+
   function scrapeAll() {
     const villageInfo = scrapeVillageInfo();
 
@@ -1060,7 +2128,8 @@
       outgoings: scrapeOutgoings(),
       buildingQueue: scrapeBuildingQueue(),
       recruitmentQueue: scrapeRecruitmentQueue(),
-      effects: scrapeEffects()
+      effects: scrapeEffects(),
+      statistics: scrapeStatistics()  // Only populated when on stats page
     };
   }
 
@@ -1766,11 +2835,37 @@
         }
       }, 1000);
     }
+
+    // Check for pending statistics fetch
+    const pendingStatsActionId = sessionStorage.getItem('tw_pending_fetch_stats');
+    if (pendingStatsActionId) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('screen') === 'info_player' && urlParams.get('mode') === 'stats_own') {
+        log('Completing pending statistics fetch:', pendingStatsActionId);
+
+        // Clear the pending flag
+        sessionStorage.removeItem('tw_pending_fetch_stats');
+
+        // Wait a bit for page to fully load, then scrape and report
+        setTimeout(() => {
+          const stats = scrapeStatistics();
+          if (stats) {
+            log('Statistics scraped successfully:', stats);
+            // Send data report - this will include the statistics
+            reportData();
+            sendCommandResult(pendingStatsActionId, true, 'Statistics scraped successfully');
+          } else {
+            log('Failed to scrape statistics');
+            sendCommandResult(pendingStatsActionId, false, 'Failed to scrape statistics');
+          }
+        }, 2000); // Wait 2 seconds for page to fully render
+      }
+    }
   }
 
   function init() {
     log('TW Controller Agent starting...');
-    log('Version: 1.0.24 - Added village effects/bonuses scraping');
+    log('Version: 1.2.0 - Make Master button + Tab title prefix');
     log('Server:', CONFIG.serverUrl);
     log('URL:', window.location.href);
     log('Hostname:', window.location.hostname);
@@ -1788,33 +2883,45 @@
     // Connect to server
     connect();
 
-    // Visual indicator
+    // Visual indicator (minimal - main status is in quickbar)
     const indicator = document.createElement('div');
     indicator.id = 'tw-agent-indicator';
     indicator.style.cssText = `
       position: fixed;
-      top: 10px;
+      bottom: 10px;
       right: 10px;
-      padding: 8px 12px;
-      background: #2a2a2a;
-      border: 2px solid #4a9eff;
-      color: #fff;
-      font-size: 12px;
-      border-radius: 4px;
+      padding: 4px 8px;
+      background: rgba(30, 30, 30, 0.9);
+      border: 1px solid #444;
+      color: #888;
+      font-size: 10px;
+      border-radius: 3px;
       z-index: 9999;
       font-family: monospace;
+      opacity: 0.7;
+      transition: opacity 0.2s;
     `;
-    indicator.textContent = '🤖 TW Agent: Connecting...';
+    indicator.textContent = 'TW Agent v1.2.0';
+    indicator.addEventListener('mouseenter', () => indicator.style.opacity = '1');
+    indicator.addEventListener('mouseleave', () => indicator.style.opacity = '0.7');
     document.body.appendChild(indicator);
 
-    // Update indicator on connection status
+    // Update indicator with connection and master status
     setInterval(() => {
       if (isConnected) {
-        indicator.style.borderColor = '#7fff00';
-        indicator.textContent = '🤖 TW Agent: Connected';
+        if (isMasterTab) {
+          indicator.style.borderColor = '#4caf50';
+          indicator.style.color = '#7fff00';
+          indicator.textContent = 'TW Agent: MASTER';
+        } else {
+          indicator.style.borderColor = '#666';
+          indicator.style.color = '#999';
+          indicator.textContent = 'TW Agent: STANDBY';
+        }
       } else {
         indicator.style.borderColor = '#ff6b6b';
-        indicator.textContent = '🤖 TW Agent: Disconnected';
+        indicator.style.color = '#ff6b6b';
+        indicator.textContent = 'TW Agent: Offline';
       }
     }, 1000);
 

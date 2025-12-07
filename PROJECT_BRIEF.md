@@ -55,7 +55,7 @@ Build a system to control 30+ Tribal Wars accounts from a single dashboard. The 
 │   ├── api.js            # REST endpoints for dashboard
 │   └── commands.js       # Command routing logic
 ├── state/
-│   └── accounts.js       # In-memory state management
+│   └── accounts.js       # In-memory state + multi-tab connection management
 ├── utils/
 │   └── logger.js         # Logging utility
 ├── public/               # Dashboard static files
@@ -194,6 +194,13 @@ Messages are JSON with a `type` field.
   "type": "pong",
   "timestamp": 1701234567890
 }
+
+// Request to become master (user clicked "Make Master" button)
+{
+  "type": "requestMaster",
+  "sessionId": "sess_xyz789",
+  "reason": "User requested via UI"
+}
 ```
 
 **Outgoing (Server → Userscript):**
@@ -236,15 +243,37 @@ Messages are JSON with a `type` field.
   "type": "requestRefresh"
 }
 
+// Navigate to a game screen (sent to master tab)
+{
+  "type": "navigate",
+  "actionId": "cmd_xyz789",
+  "screen": "overview"  // overview, main, barracks, stable, garage, smith, place, market, statistics, etc.
+}
+
+// Fetch statistics from game page
+{
+  "type": "fetchStatistics",
+  "actionId": "cmd_abc789"
+}
+
 // Ping to check connection
 {
   "type": "ping"
 }
 
-// Acknowledge registration
+// Acknowledge registration (with multi-tab support)
 {
   "type": "registered",
-  "sessionId": "sess_xyz789"
+  "sessionId": "sess_xyz789",
+  "isMaster": true,           // true = this tab is master, false = standby
+  "connectionCount": 3        // total tabs connected for this account
+}
+
+// Master status changed (sent when tab role changes)
+{
+  "type": "masterStatusChanged",
+  "isMaster": true,           // new status
+  "reason": "Previous master disconnected"  // or "User requested via UI"
 }
 ```
 
@@ -257,6 +286,8 @@ GET  /api/accounts/:id/villages # Get all villages for account (future)
 POST /api/commands/send-troops  # Queue a send troops command
 POST /api/commands/build        # Queue a build command
 POST /api/commands/recruit      # Queue a recruit command
+POST /api/commands/navigate     # Navigate master tab to a game screen
+POST /api/commands/fetch-statistics  # Fetch statistics from game
 GET  /api/alerts                # Get all incoming attacks across accounts
 GET  /api/status                # Server health + connection count
 ```
@@ -284,21 +315,23 @@ GET  /api/status                # Server health + connection count
 // ==UserScript==
 // @name         TW Controller Agent
 // @namespace    tw-controller
-// @version      1.0.0
-// @description  Tribal Wars account control agent
-// @match        https://*.tribalwars.*/*
+// @version      1.3.0
+// @description  Tribal Wars account control agent with MASTER/STANDBY multi-tab support and navigation
+// @match        https://*.tribalwars.*/game.php*
+// @match        https://*.klanhaboru.hu/game.php*
 // @grant        GM_getValue
 // @grant        GM_setValue
-// @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
 // @connect      your-server-domain.com
+// @run-at       document-start
 // ==/UserScript==
 
 (function() {
   'use strict';
-  
+
   // ============ CONFIGURATION ============
   const CONFIG = {
-    serverUrl: 'wss://your-server:3000',
+    serverUrl: 'wss://your-server:3000/ws',
     apiKey: 'your-secret-key',
     reportInterval: 60000,      // Base interval: 60 seconds
     reportJitter: 10000,        // Random jitter: ±10 seconds
@@ -311,6 +344,7 @@ GET  /api/status                # Server health + connection count
   let sessionId = null;
   let reconnectAttempts = 0;
   let reportTimer = null;
+  let isMasterTab = false;      // MASTER/STANDBY role (v1.2.0)
 
   // ============ CONNECTION LAYER ============
   // - connect()
@@ -631,6 +665,73 @@ async function recruitTroops(building, units) {
 
 ---
 
+## Multi-Tab MASTER/STANDBY System (v1.2.0)
+
+The system supports multiple browser tabs per account with intelligent role management:
+
+### How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ACCOUNT: player123                               │
+├─────────────────────────────────────────────────────────────────────┤
+│  Tab 1 (MASTER)          Tab 2 (STANDBY)       Tab 3 (STANDBY)     │
+│  ┌─────────────┐         ┌─────────────┐       ┌─────────────┐     │
+│  │ [MASTER]    │         │ [STANDBY]   │       │ [STANDBY]   │     │
+│  │ Village A   │         │ Village B   │       │ Village A   │     │
+│  │             │         │             │       │             │     │
+│  │ ● Sends     │         │ 👑 MASTER   │       │ 👑 MASTER   │     │
+│  │   reports   │         │   button    │       │   button    │     │
+│  │ ● Executes  │         │             │       │             │     │
+│  │   commands  │         │ (click to   │       │ (click to   │     │
+│  │             │         │  promote)   │       │  promote)   │     │
+│  └─────────────┘         └─────────────┘       └─────────────┘     │
+│        │                                                            │
+│        └──────────────── WebSocket ────────────────────────────────▶│ Server
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Role Responsibilities
+
+**MASTER Tab:**
+- Sends periodic data reports (every ~60 seconds)
+- Executes commands (send troops, build, recruit)
+- Shows green status badge with pulse animation
+- Browser tab title: `[MASTER] Village Name...`
+
+**STANDBY Tab:**
+- Connected but passive (no reporting, no command execution)
+- Shows gray status badge
+- Shows gold "👑 MASTER" button to request promotion
+- Browser tab title: `[STANDBY] Village Name...`
+- Automatically promoted to MASTER if current master disconnects
+
+### User Features
+
+1. **Visual Status Indicator**
+   - Green pulsing dot = MASTER
+   - Gray dot = STANDBY
+   - Status shown in quickbar/status bar
+
+2. **Make Master Button**
+   - Gold "👑 MASTER" button appears on STANDBY tabs
+   - Click to immediately become the master tab
+   - Previous master is demoted to standby
+
+3. **Browser Tab Title Prefix**
+   - Easy to identify tabs: `[MASTER]` or `[STANDBY]`
+   - Updates automatically when status changes
+
+### Automatic Failover
+
+If the MASTER tab closes or disconnects:
+1. Server detects disconnection
+2. Oldest STANDBY connection is promoted to MASTER
+3. New master receives `masterStatusChanged` message
+4. New master starts reporting and accepting commands
+
+---
+
 ## Security Considerations
 
 - API key authentication for userscript connections
@@ -694,3 +795,72 @@ async function recruitTroops(building, units) {
 2. Multi-village support (future feature)
 3. Database persistence vs in-memory only
 4. HTTPS/WSS certificate setup for production
+
+---
+
+## Version History
+
+### v1.3.0 - Dashboard Sidebars & Navigation System
+**Date:** December 2024
+
+**New Features:**
+- **Two-Sidebar Layout**: Detail panel now has two vertical sidebars on the left
+  - **Actions Sidebar (Műveletek)**: Quick action buttons (Build, Attack, Support, Recruit, Refresh)
+  - **Navigation Sidebar (Navigáció)**: In-game navigation buttons that control the master tab
+- **Navigation Command System**: Dashboard can navigate master tab to any game screen
+  - Village Overview (Áttekintés)
+  - Main Building (Főépület)
+  - Barracks (Kaszárnya)
+  - Rally Point (Gyülekező)
+  - Statistics (Statisztika)
+  - Market (Piac)
+- **Visual Distinction**: Navigation sidebar has green theme, Actions has brown theme
+
+**Server Changes:**
+- `commands.js`: Added `/api/commands/navigate` endpoint with screen validation
+- `commands.js`: Added `/api/commands/fetch-statistics` endpoint
+- Valid screens: overview, main, barracks, stable, garage, smith, place, market, wood, stone, iron, farm, storage, wall, statue, snob, statistics
+
+**Dashboard Changes:**
+- `DetailPanel.js`: Added `createActionsSidebar()`, `createNavigationSidebar()` methods
+- `DetailPanel.js`: Added `handleNavigation()` async method for API calls
+- `cards.css`: Added `.detail-panel-sidebar`, `.sidebar-btn`, `.nav-sidebar` styles
+
+**Userscript Changes:**
+- Added `handleNavigate()` function to process navigate commands
+- Master tab navigates using `window.location.href` to game screens
+- Added case 'navigate' in message handler switch
+
+### v1.2.0 - Multi-Tab MASTER/STANDBY System
+**Date:** December 2024
+
+**New Features:**
+- **Multi-tab support**: Multiple browser tabs per account with MASTER/STANDBY roles
+- **Make Master button**: Gold "👑 MASTER" button on STANDBY tabs to manually select master
+- **Tab title prefix**: Browser tabs show `[MASTER]` or `[STANDBY]` prefix
+- **Automatic failover**: STANDBY tabs automatically promoted when MASTER disconnects
+- **Session tracking**: Each tab connection has unique sessionId
+
+**Server Changes:**
+- `accounts.js`: Added `connections[]` array per account, `promoteMaster()` method
+- `websocket.js`: Added `handleRequestMaster()` handler, session-specific disconnect handling
+- New messages: `masterStatusChanged`, `requestMaster`
+
+**Userscript Changes:**
+- Added `isMasterTab` state variable
+- Added `handleMakeMasterClick()` function
+- Added `updateTabTitle()` function
+- Updated status bar with Make Master button
+- Only MASTER tab sends reports and executes commands
+
+### v1.1.0 - Custom Status Bar
+- Custom status bar for non-premium users
+- Hungarian language support for klanhaboru.hu
+- WebSocket interceptor for game events
+
+### v1.0.0 - Initial Release
+- Basic WebSocket connection to central server
+- Resource, troop, and command scraping
+- Periodic reporting with jitter
+- Command execution (send troops, build, recruit)
+- Dashboard with account overview

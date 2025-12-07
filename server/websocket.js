@@ -31,6 +31,7 @@ function initWebSocket(server) {
     logger.info('New WebSocket connection', { ip: clientIp });
 
     let accountId = null;
+    let sessionId = null;  // Track session for proper disconnect handling
     let authenticated = false;
     let pingTimer = null;
 
@@ -45,8 +46,9 @@ function initWebSocket(server) {
     ws.on('message', (data) => {
       try {
         const message = JSON.parse(data.toString());
-        handleMessage(ws, message, { accountId, authenticated }, (newAccountId, newAuth) => {
+        handleMessage(ws, message, { accountId, sessionId, authenticated }, (newAccountId, newSessionId, newAuth) => {
           accountId = newAccountId;
+          sessionId = newSessionId;
           authenticated = newAuth;
         });
       } catch (error) {
@@ -60,13 +62,14 @@ function initWebSocket(server) {
 
     // Handle connection close
     ws.on('close', () => {
-      if (accountId) {
-        accountState.disconnect(accountId);
+      if (accountId && sessionId) {
+        // Use session-specific disconnect for multi-tab support
+        accountState.disconnectSession(accountId, sessionId);
       }
       if (pingTimer) {
         clearInterval(pingTimer);
       }
-      logger.info('WebSocket connection closed', { accountId, ip: clientIp });
+      logger.info('WebSocket connection closed', { accountId, sessionId, ip: clientIp });
     });
 
     // Handle errors
@@ -109,6 +112,10 @@ function handleMessage(ws, message, context, updateContext) {
 
     case 'gameEvent':
       handleGameEvent(ws, message, context);
+      break;
+
+    case 'requestMaster':
+      handleRequestMaster(ws, message, context);
       break;
 
     // Template operations (dashboard only)
@@ -158,7 +165,7 @@ function handleMessage(ws, message, context, updateContext) {
  * Handle registration from userscript
  */
 function handleRegister(ws, message, updateContext) {
-  const { apiKey, accountId, world, villageId, villageName, coords, playerName } = message;
+  const { apiKey, accountId, world, villageId, villageName, coords, playerName, wasMaster } = message;
 
   // Validate API key
   if (apiKey !== CONFIG.apiKey) {
@@ -181,25 +188,39 @@ function handleRegister(ws, message, updateContext) {
     return;
   }
 
-  // Register the account
-  const sessionId = accountState.register(accountId, ws, {
+  // Register the account - now returns { sessionId, isMaster }
+  // Pass wasMaster flag to give priority to tabs that were master before navigation
+  const { sessionId, isMaster } = accountState.register(accountId, ws, {
     world,
     villageId,
     villageName,
     coords,
-    playerName
+    playerName,
+    wasMaster: wasMaster || false
   });
 
-  // Update context
-  updateContext(accountId, true);
+  // Update context with sessionId
+  updateContext(accountId, sessionId, true);
 
-  // Send confirmation
+  // Get connection count for this account
+  const connections = accountState.getConnections(accountId);
+
+  // Send confirmation with master status
   ws.send(JSON.stringify({
     type: 'registered',
-    sessionId
+    sessionId,
+    isMaster,
+    connectionCount: connections.length
   }));
 
-  logger.info('Account registered successfully', { accountId, sessionId, world });
+  logger.info('Account registered successfully', {
+    accountId,
+    sessionId,
+    world,
+    isMaster,
+    wasMaster: wasMaster || false,
+    totalConnections: connections.length
+  });
 }
 
 /**
@@ -272,6 +293,41 @@ function handleError(ws, message, context) {
 function handlePong(ws, message, context) {
   // Just acknowledge - connection is alive
   logger.debug('Pong received', { accountId: context.accountId });
+}
+
+/**
+ * Handle request to become master (user clicked "Make Master" button)
+ */
+function handleRequestMaster(ws, message, context) {
+  if (!context.authenticated) {
+    logger.warn('requestMaster rejected: not authenticated');
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: 'Not authenticated'
+    }));
+    return;
+  }
+
+  const { sessionId, reason } = message;
+
+  logger.info('Master promotion requested', {
+    accountId: context.accountId,
+    sessionId: context.sessionId,
+    reason
+  });
+
+  // Promote the requesting session to master
+  const result = accountState.promoteMaster(context.accountId, context.sessionId);
+
+  if (!result.success) {
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: result.error || 'Failed to promote to master'
+    }));
+  }
+
+  // Note: The promoteMaster function already sends masterStatusChanged to both tabs
+  logger.info('Master promotion result', { accountId: context.accountId, result });
 }
 
 /**

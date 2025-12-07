@@ -191,6 +191,126 @@ router.post('/recruit', async (req, res) => {
 });
 
 /**
+ * POST /api/commands/fetch-statistics
+ * Tell userscript to navigate to statistics page and scrape data
+ */
+router.post('/fetch-statistics', async (req, res) => {
+  try {
+    const { accountId } = req.body;
+
+    if (!accountId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required field: accountId'
+      });
+    }
+
+    const account = getAccountById(accountId);
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        error: 'Account not found or not connected'
+      });
+    }
+
+    const actionId = generateActionId();
+    const command = {
+      type: 'fetchStatistics',
+      actionId: actionId
+    };
+
+    // Send directly to account (no queue needed for navigation)
+    const { accountState } = require('../state/accounts');
+    const sent = accountState.sendToAccount(accountId, command);
+
+    if (!sent) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send command to account'
+      });
+    }
+
+    res.json({
+      success: true,
+      actionId: actionId,
+      message: 'Fetch statistics command sent'
+    });
+
+  } catch (error) {
+    console.error('Error in fetch-statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/commands/navigate
+ * Tell userscript to navigate to a specific game screen
+ */
+router.post('/navigate', async (req, res) => {
+  try {
+    const { accountId, screen } = req.body;
+
+    if (!accountId || !screen) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: accountId, screen'
+      });
+    }
+
+    // Valid screens
+    const validScreens = ['overview', 'main', 'barracks', 'stable', 'garage', 'smith', 'place', 'market', 'wood', 'stone', 'iron', 'farm', 'storage', 'wall', 'statue', 'snob', 'statistics'];
+    if (!validScreens.includes(screen)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid screen. Must be one of: ${validScreens.join(', ')}`
+      });
+    }
+
+    const account = getAccountById(accountId);
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        error: 'Account not found or not connected'
+      });
+    }
+
+    const actionId = generateActionId();
+    const command = {
+      type: 'navigate',
+      actionId: actionId,
+      screen: screen
+    };
+
+    // Send directly to account (no queue needed for navigation)
+    const { accountState } = require('../state/accounts');
+    const sent = accountState.sendToAccount(accountId, command);
+
+    if (!sent) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send command to account'
+      });
+    }
+
+    res.json({
+      success: true,
+      actionId: actionId,
+      message: `Navigate to ${screen} command sent`
+    });
+
+  } catch (error) {
+    console.error('Error in navigate:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * GET /api/commands/queue/status
  * Get overall queue status
  */
