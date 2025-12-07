@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TW Controller Agent
 // @namespace    tw-controller
-// @version      1.2.0
+// @version      1.5.8
 // @description  Tribal Wars account control agent
 // @author       TW Controller
 // @match        https://*.tribalwars.*/game.php*
@@ -780,99 +780,20 @@
   }
 
   /**
-   * Create a quickbar item element
-   */
-  function createQuickbarItem(text, href, className = '', iconSrc = null) {
-    const li = document.createElement('li');
-    li.className = `quickbar_item tw-agent-injected ${className}`;
-
-    if (href) {
-      const link = document.createElement('a');
-      link.href = href;
-      link.className = 'quickbar_link';
-
-      if (iconSrc) {
-        const img = document.createElement('img');
-        img.src = iconSrc;
-        img.style.cssText = 'width: 14px; height: 14px; vertical-align: middle;';
-        link.appendChild(img);
-      }
-
-      const textSpan = document.createElement('span');
-      textSpan.textContent = text;
-      link.appendChild(textSpan);
-
-      li.appendChild(link);
-    } else {
-      const span = document.createElement('span');
-
-      if (iconSrc) {
-        const img = document.createElement('img');
-        img.src = iconSrc;
-        img.style.cssText = 'width: 14px; height: 14px; vertical-align: middle;';
-        span.appendChild(img);
-      }
-
-      const textNode = document.createTextNode(text);
-      span.appendChild(textNode);
-
-      li.appendChild(span);
-    }
-
-    return li;
-  }
-
-  /**
-   * Inject status and navigation into quickbar (or create custom bar if no premium)
+   * Inject status and navigation into quickbar
+   * Always uses custom status bar (below game UI) to avoid blending with premium quickbar
    */
   function injectQuickbarStatus() {
     // Inject styles first
     injectQuickbarStyles();
 
-    // Try native quickbar first (premium users)
-    const nativeQuickbar = document.querySelector('#quickbar_contents ul.quickbar');
-
-    if (nativeQuickbar && nativeQuickbar.children.length > 0) {
-      // Premium user - inject into existing quickbar
-      injectIntoNativeQuickbar(nativeQuickbar);
-    } else {
-      // Non-premium user - create our own status bar
-      injectCustomStatusBar();
-    }
+    // Always use custom status bar - works for both premium and non-premium
+    // This prevents blending with premium quickbar
+    injectCustomStatusBar();
   }
 
   /**
-   * Inject into native quickbar (for premium users)
-   */
-  function injectIntoNativeQuickbar(quickbar) {
-    // Remove old injected items
-    const oldItems = quickbar.querySelectorAll('.tw-agent-injected');
-    oldItems.forEach(item => item.remove());
-
-    // Get game's graphic base URL
-    const graphicBase = unsafeWindow.image_base || '/graphic/';
-    const villageId = unsafeWindow.game_data?.village?.id || '';
-    const baseUrl = `/game.php?village=${villageId}&screen=`;
-
-    // Create elements
-    const { statusBadge, navItems, refreshBtn, separator } = createQuickbarElements(graphicBase, baseUrl);
-
-    // Insert all items at the beginning (in reverse order)
-    quickbar.insertBefore(separator, quickbar.firstChild);
-    quickbar.insertBefore(refreshBtn, quickbar.firstChild);
-
-    // Add nav items in reverse order
-    for (let i = navItems.length - 1; i >= 0; i--) {
-      quickbar.insertBefore(navItems[i], quickbar.firstChild);
-    }
-
-    quickbar.insertBefore(statusBadge, quickbar.firstChild);
-
-    log(`Quickbar injected (native): ${isMasterTab ? 'MASTER' : 'STANDBY'} tab`);
-  }
-
-  /**
-   * Create custom status bar for non-premium users
+   * Create custom status bar (works for both premium and non-premium)
    */
   function injectCustomStatusBar() {
     // Remove old custom bar if exists
@@ -976,61 +897,7 @@
   }
 
   /**
-   * Create quickbar elements for native quickbar
-   */
-  function createQuickbarElements(graphicBase, baseUrl) {
-    // Status Badge
-    const statusBadge = document.createElement('li');
-    statusBadge.className = `quickbar_item tw-agent-injected ${isMasterTab ? 'tw-agent-master-badge' : 'tw-agent-standby-badge'}`;
-    statusBadge.id = 'tw-agent-status-badge';
-
-    const statusSpan = document.createElement('span');
-    const statusDot = document.createElement('span');
-    statusDot.className = `tw-agent-status-dot ${isMasterTab ? 'master' : 'standby'}`;
-    statusSpan.appendChild(statusDot);
-    statusSpan.appendChild(document.createTextNode(isMasterTab ? 'MASTER' : 'STANDBY'));
-    statusBadge.appendChild(statusSpan);
-
-    // Nav items
-    const navConfig = [
-      { text: 'Áttekintés', screen: 'overview', icon: 'overview/village_info.png' },
-      { text: 'Főép.', screen: 'main', icon: 'buildings/main.png' },
-      { text: 'Barakk', screen: 'barracks', icon: 'buildings/barracks.png' },
-      { text: 'Gyülekező', screen: 'place', icon: 'buildings/place.png' },
-      { text: 'Statisztikák', screen: 'info_player&mode=stats_own', icon: 'icons/ally.png' }
-    ];
-
-    const navItems = navConfig.map(item =>
-      createQuickbarItem(item.text, baseUrl + item.screen, 'tw-agent-nav-item', graphicBase + item.icon)
-    );
-
-    // Refresh button
-    const refreshBtn = document.createElement('li');
-    refreshBtn.className = 'quickbar_item tw-agent-injected tw-agent-nav-item tw-agent-refresh-btn';
-    refreshBtn.title = 'Adatok frissítése (bármely tab)';
-
-    const refreshLink = document.createElement('a');
-    refreshLink.href = '#';
-    refreshLink.className = 'quickbar_link';
-
-    const refreshImg = document.createElement('img');
-    refreshImg.src = graphicBase + 'icons/refresh.png';
-    refreshImg.style.cssText = 'width: 14px; height: 14px;';
-    refreshLink.appendChild(refreshImg);
-    refreshBtn.appendChild(refreshLink);
-
-    refreshBtn.addEventListener('click', handleRefreshClick(baseUrl));
-
-    // Separator
-    const separator = document.createElement('li');
-    separator.className = 'quickbar_item tw-agent-injected';
-    separator.innerHTML = '<span class="tw-agent-separator">|</span>';
-
-    return { statusBadge, navItems, refreshBtn, separator };
-  }
-
-  /**
-   * Create status bar elements for custom bar (non-premium)
+   * Create status bar elements for custom bar
    */
   function createStatusBarElements(graphicBase, baseUrl) {
     // Status Badge
@@ -1414,6 +1281,10 @@
         handleNavigate(message);
         break;
 
+      case 'startFarm':
+        handleStartFarm(message);
+        break;
+
       default:
         log('Unknown message type:', message.type);
     }
@@ -1644,6 +1515,703 @@
 
   function handlePing(message) {
     send('pong', { timestamp: Date.now() });
+  }
+
+  // ============ FARM BOT ============
+
+  // ============ FARM BOT HANDLER ============
+  // Adapted from NorbiOn_Farm.js NorbiFarmTabHandler
+  // Uses WebSocket for reporting instead of localStorage
+
+  const FarmHandler = {
+    farmTimer: null,
+    totalClicks: 0,
+    isRunning: false,
+    isPaused: false,
+    startTime: null,
+    recheckTimeout: null,
+    actionId: null,
+    lastProgress: { current: 0, total: 0 },
+    noProgressCount: 0,
+
+    /**
+     * Start the farming process
+     */
+    start: function(actionId) {
+      log('[FarmHandler] === STARTING FARM PROCESS ===');
+      log('[FarmHandler] ActionId: ' + actionId);
+      this.actionId = actionId;
+      this.isRunning = true;
+      this.isPaused = false;
+      this.totalClicks = 0;
+      this.startTime = Date.now();
+      this.lastProgress = { current: 0, total: 0 };
+      this.noProgressCount = 0;
+
+      // Log current page state for debugging
+      const progressBar = document.getElementById('FarmGodProgessbar');
+      const buttonA = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_a');
+      const buttonB = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_b');
+      log('[FarmHandler] Progress bar found: ' + !!progressBar);
+      log('[FarmHandler] Button A found: ' + !!buttonA);
+      log('[FarmHandler] Button B found: ' + !!buttonB);
+
+      if (!progressBar && !buttonA && !buttonB) {
+        log('[FarmHandler] WARNING: No FarmGod elements found! FarmGod may not be initialized.');
+      }
+
+      const self = this;
+
+      // Start single interval: bot check -> progress check -> button click
+      this.farmTimer = setInterval(function() {
+        // Skip if paused (waiting for bot protection recheck)
+        if (self.isPaused) {
+          return;
+        }
+
+        // Step 1: Check bot protection first
+        if (self.checkBotProtection()) {
+          return; // Paused, waiting for recheck
+        }
+
+        // Step 2: Check progress
+        if (self.monitorProgress()) {
+          return; // Stop if farming completed
+        }
+
+        // Step 3: Click farm button
+        self.clickFarmButton();
+      }, 220); // Check and click every 220ms
+
+      log('[FarmHandler] Farm timer started (220ms interval)');
+    },
+
+    /**
+     * Click farm button (A or B)
+     */
+    clickFarmButton: function() {
+      if (!this.isRunning) return;
+
+      try {
+        // Look for farm buttons (A or B) - same selectors as NorbiOn_Farm.js
+        const buttonA = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_a');
+        const buttonB = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_b');
+
+        // Click whichever button is available (A first, then B)
+        const button = buttonA || buttonB;
+
+        if (button) {
+          button.click();
+          this.totalClicks++;
+
+          if (this.totalClicks % 50 === 0) {
+            log('[FarmHandler] Clicked farm button ' + this.totalClicks + ' times');
+          }
+        } else {
+          // Log every 50 cycles when no button found
+          if (this.totalClicks % 50 === 0 || this.totalClicks === 0) {
+            log('[FarmHandler] No farm button found, waiting...');
+          }
+        }
+      } catch (err) {
+        error('[FarmHandler] Error clicking farm button:', err);
+      }
+    },
+
+    /**
+     * Monitor farming progress
+     */
+    monitorProgress: function() {
+      if (!this.isRunning) return false;
+
+      try {
+        const progressBar = document.getElementById('FarmGodProgessbar');
+        if (!progressBar) return false;
+
+        const labelSpan = progressBar.querySelector('span.label');
+        if (!labelSpan) return false;
+
+        // Get clean text (handles HTML like grey dots)
+        const cleanText = labelSpan.innerText || labelSpan.textContent;
+
+        // Simple string-based parsing to handle thousands separators
+        const parts = cleanText.split(' / ');
+
+        if (parts.length !== 2) {
+          return false;
+        }
+
+        let currentStr = parts[0].trim();
+        let totalStr = parts[1].trim();
+
+        // Handle thousands separators (Hungarian uses "." or space)
+        if (currentStr.indexOf('.') !== -1) {
+          currentStr = currentStr.replace(/\./g, '');
+        }
+        currentStr = currentStr.replace(/\s/g, '');
+
+        if (totalStr.indexOf('.') !== -1) {
+          totalStr = totalStr.replace(/\./g, '');
+        }
+        totalStr = totalStr.replace(/\s/g, '');
+
+        const current = parseInt(currentStr, 10);
+        const total = parseInt(totalStr, 10);
+
+        if (isNaN(current) || isNaN(total)) {
+          return false;
+        }
+
+        // Send progress update if changed
+        if (current !== this.lastProgress.current || total !== this.lastProgress.total) {
+          log(`[FarmHandler] Progress: ${current}/${total}`);
+          send('farmProgress', {
+            actionId: this.actionId,
+            current: current,
+            total: total
+          });
+          this.lastProgress = { current, total };
+          this.noProgressCount = 0;
+        } else {
+          this.noProgressCount++;
+        }
+
+        // Check if farming is complete
+        // Case 1: Normal completion - current >= total (and total > 0)
+        // Case 2: Empty run - total is 0 (no villages to farm) - treat as success
+        if ((total > 0 && current >= total) || (total === 0 && this.noProgressCount > 10)) {
+          const isEmptyRun = total === 0;
+          if (isEmptyRun) {
+            log('[FarmHandler] EMPTY RUN - No villages to farm (0/0)');
+          } else {
+            log('[FarmHandler] FARMING COMPLETED! Final: ' + cleanText);
+          }
+          this.stop();
+
+          const duration = Date.now() - this.startTime;
+          const durationMinutes = Math.floor(duration / 60000);
+          const durationSeconds = Math.floor((duration % 60000) / 1000);
+
+          log(`[FarmHandler] Duration: ${durationMinutes}m ${durationSeconds}s, Clicks: ${this.totalClicks}`);
+
+          send('farmComplete', {
+            actionId: this.actionId,
+            farmed: total,
+            duration: duration,
+            totalClicks: this.totalClicks,
+            emptyRun: isEmptyRun
+          });
+
+          // Close farm tab after 2 seconds (new tab approach)
+          log('[FarmHandler] Closing farm tab in 2 seconds...');
+          setTimeout(function() {
+            log('[FarmHandler] Closing farm tab now');
+            window.close();
+          }, 2000);
+
+          return true; // Farming completed
+        }
+
+        // Check for stall (no progress for ~22 seconds with 220ms interval)
+        if (this.noProgressCount > 100) {
+          log('[FarmHandler] Farming stalled - no progress detected');
+          this.stop();
+          send('farmError', {
+            actionId: this.actionId,
+            error: 'stalled',
+            message: 'Farming stalled - no progress for 22 seconds'
+          });
+          // Close farm tab after error
+          setTimeout(function() {
+            log('[FarmHandler] Closing farm tab after stall error');
+            window.close();
+          }, 2000);
+          return true;
+        }
+
+        return false; // Not complete yet
+
+      } catch (err) {
+        error('[FarmHandler] Error monitoring progress:', err);
+        return false;
+      }
+    },
+
+    /**
+     * Comprehensive bot protection detection (7 methods from NorbiOn_Farm.js)
+     */
+    detectBotProtection: function() {
+      try {
+        // Method 1: Check for botprotection_quest element
+        if (document.getElementById('botprotection_quest')) {
+          return 'botprotection_quest element';
+        }
+
+        // Method 2: Check for .bot-protection-row
+        if (document.querySelector('.bot-protection-row')) {
+          return '.bot-protection-row element';
+        }
+
+        // Method 3: Check for .captcha element
+        if (document.querySelector('.captcha')) {
+          return '.captcha element';
+        }
+
+        // Method 4: Check for popup_box_bot_protection
+        if (document.querySelector('#popup_box_bot_protection')) {
+          return '#popup_box_bot_protection element';
+        }
+
+        // Method 5-7: Check for bot protection text (Hungarian/German/English)
+        const bodyText = document.body.textContent || document.body.innerText || '';
+        if (bodyText.indexOf('Bot védelem') !== -1) {
+          return '"Bot védelem" text';
+        }
+        if (bodyText.indexOf('Kezdd meg a botvédelem ellenőrzését') !== -1) {
+          return '"Kezdd meg a botvédelem ellenőrzését" text';
+        }
+        if (bodyText.indexOf('botvédelem ellenőrzését') !== -1) {
+          return '"botvédelem ellenőrzését" text';
+        }
+        if (bodyText.indexOf('Start the bot protection check') !== -1) {
+          return '"Start the bot protection check" text';
+        }
+        if (bodyText.indexOf('Botschutz') !== -1) {
+          return '"Botschutz" text';
+        }
+
+      } catch (err) {
+        error('[FarmHandler] Error in detectBotProtection:', err);
+      }
+
+      return null; // No bot protection detected
+    },
+
+    /**
+     * Check bot protection with pause/resume logic
+     */
+    checkBotProtection: function() {
+      if (!this.isRunning) return false;
+
+      const detectionMethod = this.detectBotProtection();
+
+      if (detectionMethod) {
+        // Bot protection detected!
+        if (!this.isPaused) {
+          // First detection - pause and schedule recheck
+          log('[FarmHandler] BOT PROTECTION DETECTED! Method: ' + detectionMethod);
+          log('[FarmHandler] Pausing farming for 10 seconds... (captcha solver working)');
+
+          this.isPaused = true;
+          const self = this;
+
+          // Send pause notification to server
+          send('farmProgress', {
+            actionId: this.actionId,
+            current: this.lastProgress.current,
+            total: this.lastProgress.total,
+            paused: true,
+            reason: 'Bot protection detected: ' + detectionMethod
+          });
+
+          // Schedule recheck after 10 seconds
+          this.recheckTimeout = setTimeout(function() {
+            log('[FarmHandler] Rechecking bot protection after 10 seconds...');
+
+            const recheckMethod = self.detectBotProtection();
+
+            if (recheckMethod) {
+              // Still detected - stop farming completely
+              log('[FarmHandler] BOT PROTECTION STILL PRESENT! Method: ' + recheckMethod);
+              log('[FarmHandler] Captcha solver failed or timeout. Stopping farming...');
+
+              self.stop();
+
+              send('farmError', {
+                actionId: self.actionId,
+                error: 'botProtection',
+                message: 'Bot protection detected - farming stopped after recheck',
+                detectionMethod: recheckMethod,
+                totalClicks: self.totalClicks
+              });
+            } else {
+              // All clear - resume farming!
+              log('[FarmHandler] BOT PROTECTION CLEARED! Captcha solver successful!');
+              log('[FarmHandler] Resuming farming...');
+              self.isPaused = false;
+
+              // Notify server that we resumed
+              send('farmProgress', {
+                actionId: self.actionId,
+                current: self.lastProgress.current,
+                total: self.lastProgress.total,
+                paused: false,
+                reason: 'Bot protection cleared, resuming'
+              });
+            }
+          }, 10000); // 10 seconds
+        }
+
+        return true; // Bot protection detected (paused)
+      }
+
+      return false; // No bot protection
+    },
+
+    /**
+     * Stop farming
+     */
+    stop: function() {
+      this.isRunning = false;
+      this.isPaused = false;
+
+      // Clear farm timer
+      if (this.farmTimer) {
+        clearInterval(this.farmTimer);
+        this.farmTimer = null;
+      }
+
+      // Clear recheck timeout if exists
+      if (this.recheckTimeout) {
+        clearTimeout(this.recheckTimeout);
+        this.recheckTimeout = null;
+      }
+
+      // Clear sessionStorage state
+      sessionStorage.removeItem('tw_farm_state');
+
+      log('[FarmHandler] Stopped farming. Total button clicks: ' + this.totalClicks);
+    }
+  };
+
+  /**
+   * Handle start farm command from server
+   */
+  function handleStartFarm(message) {
+    // Only master tab executes commands
+    if (!isMasterTab) {
+      log('Ignoring startFarm command - not master tab');
+      return;
+    }
+
+    const actionId = message.actionId;
+
+    log(`Starting farm with actionId: ${actionId}`);
+
+    // Get farm page URL
+    const baseUrl = window.location.href.split('?')[0].replace(/\/game\.php.*/, '/game.php');
+    const villageId = unsafeWindow.game_data?.village?.id;
+
+    if (!villageId) {
+      log('Error: Could not get village ID');
+      send('farmError', {
+        actionId: actionId,
+        error: 'noVillageId',
+        message: 'Could not get village ID'
+      });
+      return;
+    }
+
+    // Build farm URL with actionId parameter (new tab approach)
+    const farmUrl = `${baseUrl}?village=${villageId}&screen=am_farm&tw_farm_action=${actionId}`;
+    log(`Opening farm tab: ${farmUrl}`);
+
+    // Open in new tab - the new tab will detect the tw_farm_action parameter and start farming
+    window.open(farmUrl, 'tw_farm_tab_' + villageId);
+  }
+
+  /**
+   * Check if we're on the farm page and should execute farming
+   * New tab approach: detect tw_farm_action URL parameter
+   */
+  function checkFarmExecution() {
+    log('=== CHECK FARM EXECUTION (New Tab) ===');
+
+    // Check for tw_farm_action parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const actionId = urlParams.get('tw_farm_action');
+
+    if (!actionId) {
+      log('No tw_farm_action parameter - this is not a farm tab');
+      return;
+    }
+
+    log(`FARM TAB DETECTED! ActionId: ${actionId}`);
+
+    // Verify we're on the am_farm page
+    const isAmFarm = window.location.href.includes('screen=am_farm');
+    if (!isAmFarm) {
+      log('ERROR: tw_farm_action found but not on am_farm page');
+      return;
+    }
+
+    // CRITICAL: Farm tabs should NEVER become master
+    // Clear master status from sessionStorage to prevent stealing master from opener tab
+    sessionStorage.removeItem(MASTER_STATUS_KEY);
+    log('Cleared master status - farm tabs are always workers');
+
+    // Mark this tab as a dedicated farm tab (not master)
+    log('This is a dedicated farm tab - will execute farming and close when done');
+
+    // Execute farming after page loads
+    setTimeout(function() {
+      executeFarming(actionId);
+    }, 3000); // Wait 3 seconds for page to fully load
+  }
+
+  /**
+   * Execute the actual farming process
+   * EXACTLY following NorbiOn_Farm.js workflow
+   * Uses sessionStorage to survive page updates (from NorbiOn_Farm.js pattern)
+   */
+  // Helper to send debug messages to server via WebSocket
+  function farmDebug(actionId, message, data) {
+    log('[FarmDebug] ' + message);
+    send('farmDebug', {
+      actionId: actionId,
+      message: message,
+      data: data || {},
+      timestamp: Date.now()
+    });
+  }
+
+  function executeFarming(actionId) {
+    log('=== EXECUTE FARMING (NorbiOn workflow) ===');
+    log('ActionId: ' + actionId);
+    farmDebug(actionId, 'Starting executeFarming');
+
+    // Check if we already clicked the button (page might have reloaded)
+    var farmState = sessionStorage.getItem('tw_farm_state');
+    if (farmState) {
+      try {
+        farmState = JSON.parse(farmState);
+        if (farmState.actionId === actionId && farmState.buttonClicked) {
+          log('Resuming farming - button was already clicked');
+          // Go directly to FarmHandler
+          loadFarmGod(function() {
+            waitForFarmGod(function() {
+              log('FarmGod ready, starting FarmHandler (resumed)...');
+              FarmHandler.start(actionId);
+            });
+          });
+          return;
+        }
+      } catch (e) {
+        log('Error parsing farm state: ' + e);
+      }
+    }
+
+    // Step 1: Load FarmGod script (from NorbiOn_Farm.js line 283)
+    farmDebug(actionId, 'Step 1: Loading FarmGod script...');
+    loadFarmGod(function() {
+      log('FarmGod script loaded!');
+      farmDebug(actionId, 'FarmGod script loaded successfully');
+
+      // Step 2: Wait for FarmGod to initialize (from NorbiOn_Farm.js line 288-289)
+      farmDebug(actionId, 'Step 2: Waiting for FarmGod to initialize...');
+      waitForFarmGod(function() {
+        log('FarmGod ready, starting Final Initialization...');
+        farmDebug(actionId, 'FarmGod is ready');
+
+        // Step 2.5: Check if A/B farm buttons are already visible (farm already configured)
+        var buttonA = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_a');
+        var buttonB = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_b');
+
+        if (buttonA || buttonB) {
+          log('A/B farm buttons already visible - farm is configured, skipping setup button');
+          farmDebug(actionId, 'A/B buttons found! Farm already configured, starting FarmHandler directly', {
+            hasButtonA: !!buttonA,
+            hasButtonB: !!buttonB
+          });
+          FarmHandler.start(actionId);
+          return;
+        }
+
+        // Step 3: Click the "Farm megtervezése" button (from NorbiOn_Farm.js line 293-296)
+        log('Looking for Farm megtervezése button...');
+        farmDebug(actionId, 'Step 3: Looking for Farm megtervezése button (A/B not found)...');
+        var planButton = document.querySelector('input.btn.optionButton[value="Farm megtervezése"]');
+
+        // Debug: log all buttons on page if not found
+        if (!planButton) {
+          log('DEBUG: Button not found with exact selector, checking alternatives...');
+          var allInputBtns = document.querySelectorAll('input.btn');
+          var buttonList = [];
+          allInputBtns.forEach(function(btn, i) {
+            buttonList.push({ index: i, value: btn.value, className: btn.className });
+            log('  [' + i + '] value="' + btn.value + '" class="' + btn.className + '"');
+          });
+          farmDebug(actionId, 'Button NOT found! All buttons on page:', { buttons: buttonList });
+
+          // Try alternative selectors
+          planButton = document.querySelector('input[value="Farm megtervezése"]');
+          if (planButton) {
+            log('DEBUG: Found with simpler selector!');
+            farmDebug(actionId, 'Found button with simpler selector');
+          }
+        }
+
+        if (planButton) {
+          log('Found Farm megtervezése button, clicking...');
+          farmDebug(actionId, 'Found button, clicking it');
+
+          // Save state BEFORE clicking (in case page reloads)
+          sessionStorage.setItem('tw_farm_state', JSON.stringify({
+            actionId: actionId,
+            buttonClicked: true,
+            timestamp: Date.now()
+          }));
+
+          planButton.click();
+
+          // Step 4: Wait for loading throbber to disappear (from NorbiOn_Farm.js line 301-320)
+          log('Waiting for loading throbber to disappear...');
+          waitForThrobberToDisappear(function() {
+            log('Farm plan created, now starting continuous farming...');
+
+            // Step 5: Start the FarmHandler (from NorbiOn_Farm.js line 327+)
+            FarmHandler.start(actionId);
+          });
+        } else {
+          log('ERROR: Farm megtervezése button not found!');
+          farmDebug(actionId, 'ERROR: Farm megtervezése button not found! Closing tab in 3s');
+          send('farmError', {
+            actionId: actionId,
+            error: 'buttonNotFound',
+            message: 'Farm megtervezése button not found'
+          });
+          setTimeout(function() { window.close(); }, 3000);
+        }
+      });
+    });
+  }
+
+  /**
+   * Load FarmGod script from Innogames CDN
+   */
+  function loadFarmGod(callback) {
+    // Check if FarmGod is already loaded
+    if (typeof unsafeWindow.FarmGod !== 'undefined') {
+      log('FarmGod already loaded');
+      callback();
+      return;
+    }
+
+    // Check if jQuery is available
+    if (typeof unsafeWindow.$ !== 'undefined' && unsafeWindow.$.getScript) {
+      log('Loading FarmGod via jQuery.getScript...');
+      unsafeWindow.$.getScript('https://media.innogamescdn.com/com_DS_HU/scripts/farmgod.js')
+        .done(function() {
+          log('FarmGod script loaded successfully');
+          callback();
+        })
+        .fail(function() {
+          log('Failed to load FarmGod via jQuery, trying script tag...');
+          loadFarmGodViaScript(callback);
+        });
+    } else {
+      loadFarmGodViaScript(callback);
+    }
+  }
+
+  /**
+   * Load FarmGod via script tag (fallback)
+   */
+  function loadFarmGodViaScript(callback) {
+    const script = document.createElement('script');
+    script.src = 'https://media.innogamescdn.com/com_DS_HU/scripts/farmgod.js';
+    script.onload = function() {
+      log('FarmGod script loaded via script tag');
+      callback();
+    };
+    script.onerror = function() {
+      log('Failed to load FarmGod script');
+      const farmData = sessionStorage.getItem('tw_farm_active');
+      const actionId = farmData ? JSON.parse(farmData).actionId : null;
+      send('farmError', {
+        actionId: actionId,
+        error: 'farmGodLoadFailed',
+        message: 'Failed to load FarmGod script from CDN'
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  /**
+   * Wait for FarmGod to be fully initialized AND its UI to appear
+   * Waits for either the setup button OR the A/B farm buttons
+   */
+  function waitForFarmGod(callback) {
+    let attempts = 0;
+    const maxAttempts = 100; // 10 seconds max
+
+    const checkFarmGod = function() {
+      attempts++;
+
+      // First check if FarmGod object exists
+      if (!unsafeWindow.FarmGod) {
+        if (attempts >= maxAttempts) {
+          log('FarmGod object not found after timeout');
+          callback();
+          return;
+        }
+        setTimeout(checkFarmGod, 100);
+        return;
+      }
+
+      // FarmGod exists, now wait for its UI to appear
+      // Check for setup button (in popup)
+      var setupButton = document.querySelector('input.btn.optionButton[value="Farm megtervezése"]');
+      // Check for A/B buttons (farm already configured)
+      var buttonA = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_a');
+      var buttonB = document.querySelector('a.farmGod_icon.farm_icon.farm_icon_b');
+
+      if (setupButton || buttonA || buttonB) {
+        log('FarmGod UI is ready: ' + (setupButton ? 'setup button found' : 'A/B buttons found'));
+        callback();
+      } else if (attempts >= maxAttempts) {
+        log('FarmGod UI timeout - proceeding anyway (buttons might appear later)');
+        callback();
+      } else {
+        if (attempts % 10 === 0) {
+          log('Waiting for FarmGod UI... attempt ' + attempts);
+        }
+        setTimeout(checkFarmGod, 100);
+      }
+    };
+
+    checkFarmGod();
+  }
+
+  /**
+   * Wait for loading throbber to disappear
+   */
+  function waitForThrobberToDisappear(callback, maxWait) {
+    maxWait = maxWait || 30000;
+    const startTime = Date.now();
+
+    const checkThrobber = function() {
+      // Check for throbber image
+      const throbber = document.querySelector('img[src*="throbber.gif"]');
+
+      if (!throbber) {
+        log('Throbber disappeared, loading complete!');
+        // Wait a bit more for content to render
+        setTimeout(callback, 1000);
+        return;
+      }
+
+      if (Date.now() - startTime > maxWait) {
+        log('Throbber wait timeout, proceeding anyway...');
+        callback();
+        return;
+      }
+
+      setTimeout(checkThrobber, 500);
+    };
+
+    // Start checking after initial delay
+    setTimeout(checkThrobber, 500);
   }
 
   // ============ REGISTRATION ============
@@ -2865,7 +3433,7 @@
 
   function init() {
     log('TW Controller Agent starting...');
-    log('Version: 1.2.0 - Make Master button + Tab title prefix');
+    log('Version: 1.5.8 - Treat 0/0 progress as empty run (success) not stall');
     log('Server:', CONFIG.serverUrl);
     log('URL:', window.location.href);
     log('Hostname:', window.location.hostname);
@@ -2879,6 +3447,9 @@
 
     // Check for pending commands from navigation
     checkPendingCommands();
+
+    // Check if we should execute farming (after navigation to farm page)
+    checkFarmExecution();
 
     // Connect to server
     connect();
@@ -2901,7 +3472,7 @@
       opacity: 0.7;
       transition: opacity 0.2s;
     `;
-    indicator.textContent = 'TW Agent v1.2.0';
+    indicator.textContent = 'TW Agent v1.5.1';
     indicator.addEventListener('mouseenter', () => indicator.style.opacity = '1');
     indicator.addEventListener('mouseleave', () => indicator.style.opacity = '0.7');
     document.body.appendChild(indicator);

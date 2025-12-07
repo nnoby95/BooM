@@ -1,0 +1,212 @@
+/**
+ * Debug Tab Styles
+ * Styling for the real-time debug log viewer
+ */
+
+/* Debug Tab Container */
+.debug-tab {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.debug-header {
+    flex-shrink: 0;
+}
+
+.debug-header h3 {
+    font-family: Georgia, serif;
+}
+
+/* Filter Selects */
+.debug-filter-select {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid var(--tw-border-medium);
+    border-radius: var(--radius-sm);
+    background: var(--tw-bg-input);
+    color: var(--tw-text-dark);
+    cursor: pointer;
+}
+
+.debug-filter-select:focus {
+    outline: none;
+    border-color: var(--tw-btn-green);
+}
+
+/* Buttons */
+.debug-clear-btn,
+.debug-refresh-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.debug-clear-btn {
+    background: linear-gradient(to bottom, #f44336, #d32f2f);
+    border: 1px solid #c62828;
+    color: white;
+}
+
+.debug-clear-btn:hover {
+    background: linear-gradient(to bottom, #ef5350, #f44336);
+}
+
+.debug-refresh-btn {
+    background: linear-gradient(to bottom, #2196F3, #1976D2);
+    border: 1px solid #1565C0;
+    color: white;
+}
+
+.debug-refresh-btn:hover {
+    background: linear-gradient(to bottom, #42A5F5, #2196F3);
+}
+
+/* Log Container */
+.debug-log-container {
+    flex: 1;
+    overflow-y: auto;
+    background: #1a1a1a;
+    border: 1px solid var(--tw-border-dark);
+    border-radius: var(--radius-sm);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 11px;
+    padding: 8px;
+    min-height: 400px;
+    max-height: calc(100vh - 300px);
+}
+
+/* Loading/Empty States */
+.debug-loading,
+.debug-empty {
+    color: #888;
+    text-align: center;
+    padding: 40px;
+    font-style: italic;
+}
+
+/* Log Row */
+.debug-log-row {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    align-items: center;
+    color: #ddd;
+}
+
+.debug-log-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Timestamp */
+.debug-log-time {
+    color: #888;
+    flex-shrink: 0;
+    width: 60px;
+}
+
+/* Type Badge */
+.debug-log-type {
+    flex-shrink: 0;
+    width: 70px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Account ID */
+.debug-log-account {
+    flex-shrink: 0;
+    width: 120px;
+    color: #aaa;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Message */
+.debug-log-message {
+    flex: 1;
+    color: #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Data */
+.debug-log-data {
+    flex-shrink: 0;
+    max-width: 200px;
+    color: #666;
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+}
+
+/* Footer */
+.debug-footer {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #666;
+    border-top: 1px solid var(--tw-border-light);
+    background: rgba(0, 0, 0, 0.03);
+    margin-top: 8px;
+    border-radius: var(--radius-sm);
+}
+
+/* Type-specific row colors */
+.debug-log-row[data-type="farmError"] .debug-log-message,
+.debug-log-row[data-type="botProtection"] .debug-log-message {
+    color: #ff6b6b;
+}
+
+.debug-log-row[data-type="farmComplete"] .debug-log-message {
+    color: #69db7c;
+}
+
+/* Scrollbar styling for dark background */
+.debug-log-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.debug-log-container::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+.debug-log-container::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.debug-log-container::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+    .debug-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .debug-log-account {
+        width: 80px;
+    }
+
+    .debug-log-data {
+        display: none;
+    }
+}

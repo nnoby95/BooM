@@ -11,6 +11,8 @@ const { initWebSocket } = require('./websocket');
 const templateManager = require('./state/templates');
 const apiRoutes = require('./routes/api');
 const commandRoutes = require('./routes/commands');
+const farmRoutes = require('./routes/farm');
+const debugRoutes = require('./routes/debug');
 const { logger } = require('./utils/logger');
 
 // Configuration
@@ -36,6 +38,8 @@ app.use((req, res, next) => {
 // API routes
 app.use('/api', apiRoutes);
 app.use('/api/commands', commandRoutes);
+app.use('/api/farm', farmRoutes);
+app.use('/api/debug', debugRoutes);
 
 // Serve userscript with proper headers for Tampermonkey
 app.get('/tw-agent-v1.0.12.user.js', (req, res) => {

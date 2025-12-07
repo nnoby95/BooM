@@ -800,6 +800,35 @@ If the MASTER tab closes or disconnects:
 
 ## Version History
 
+### v1.4.0 - Dashboard Feature Navigation & Debug Tab
+**Date:** December 2024
+
+**New Features:**
+- **Feature Navigation Bar**: Horizontal row of clickable boxes at top of dashboard
+  - "Fiókok" (first box) - Shows accounts grid and alerts section
+  - 8 empty placeholder boxes for future features
+  - "Debug" (last box) - Real-time debug log viewer
+- **Main Panel Redesign**: Border around entire panel with TW parchment theme
+- **Debug Tab Component**: Real-time debug log viewer for all connected accounts
+  - Filter by account dropdown
+  - Filter by log type (farmDebug, farmProgress, farmComplete, farmError, botProtection, etc.)
+  - Auto-scroll toggle
+  - Clear/Refresh buttons
+  - Color-coded log types with dark terminal-style background
+
+**Dashboard Changes:**
+- `index.html`: New feature nav structure with `.feature-nav` and `.feature-box` elements
+- `components.css`: Feature nav styling (.main-panel, .feature-box.active/.disabled)
+- `app.js`: `setupFeatureNav()` function for click handlers and content switching
+- `DebugTab.js`: New component for debug log viewing
+- `debug.css`: Debug tab styling
+
+**Server Changes:**
+- `debugLog.js`: Server-side log storage service (last 1000 entries)
+- `debug.js`: Debug API routes (GET/DELETE /api/debug/logs)
+- `websocket.js`: Debug message handling and broadcast to dashboards
+- `index.js`: Debug routes registration
+
 ### v1.3.0 - Dashboard Sidebars & Navigation System
 **Date:** December 2024
 

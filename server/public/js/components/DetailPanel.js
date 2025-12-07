@@ -764,6 +764,141 @@ class DetailPanel extends Component {
   }
 
   /**
+   * Handle farm start button click (modal only)
+   */
+  async handleFarmStart(accountId) {
+    // Get values from modal
+    const intervalInput = document.getElementById(`farm-modal-interval-${accountId}`);
+    const delayInput = document.getElementById(`farm-modal-delay-${accountId}`);
+
+    const intervalMinutes = parseInt(intervalInput?.value) || 30;
+    const randomDelayMinutes = parseInt(delayInput?.value) || 5;
+
+    console.log(`Starting farm for ${accountId} with interval ${intervalMinutes}min ±${randomDelayMinutes}min`);
+
+    try {
+      const response = await fetch('/api/farm/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId, intervalMinutes, randomDelayMinutes })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.updateFarmModalUI(accountId, result.status);
+      } else {
+        alert(`Farm indítási hiba: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Farm start error:', error);
+      alert(`Hiba: ${error.message}`);
+    }
+  }
+
+  /**
+   * Handle farm stop button click
+   */
+  async handleFarmStop(accountId) {
+    console.log(`Stopping farm loop for ${accountId}`);
+
+    try {
+      const response = await fetch('/api/farm/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.updateFarmModalUI(accountId, result.status);
+      } else {
+        alert(`Farm leállítási hiba: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Farm stop error:', error);
+      alert(`Hiba: ${error.message}`);
+    }
+  }
+
+  /**
+   * Handle save farm settings button click
+   */
+  async handleFarmSaveSettings(accountId) {
+    // Get values from modal
+    const intervalInput = document.getElementById(`farm-modal-interval-${accountId}`);
+    const delayInput = document.getElementById(`farm-modal-delay-${accountId}`);
+
+    const intervalMinutes = parseInt(intervalInput?.value) || 30;
+    const randomDelayMinutes = parseInt(delayInput?.value) || 5;
+
+    console.log(`Saving farm settings for ${accountId}: interval=${intervalMinutes}min, delay=±${randomDelayMinutes}min`);
+
+    try {
+      const response = await fetch(`/api/farm/settings/${accountId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intervalMinutes, randomDelayMinutes })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ Beállítások mentve!\nIntervallum: ${intervalMinutes} perc\nRandom: ±${randomDelayMinutes} perc`);
+      } else {
+        alert(`Mentési hiba: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Save settings error:', error);
+      alert(`Hiba: ${error.message}`);
+    }
+  }
+
+  /**
+   * Handle farm now (single run) button click
+   */
+  async handleFarmNow(accountId) {
+    console.log(`Running farm once for ${accountId}`);
+
+    // Disable button during execution
+    const farmNowBtn = document.getElementById(`farm-modal-now-${accountId}`);
+    if (farmNowBtn) {
+      farmNowBtn.disabled = true;
+      farmNowBtn.textContent = '🚜 Farmolás...';
+    }
+
+    try {
+      const response = await fetch('/api/farm/once', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.updateFarmModalUI(accountId, result.status);
+      } else {
+        alert(`Farm hiba: ${result.error}`);
+        // Re-enable button on error
+        if (farmNowBtn) {
+          farmNowBtn.disabled = false;
+          farmNowBtn.textContent = '🚜 Farm Most';
+        }
+      }
+    } catch (error) {
+      console.error('Farm once error:', error);
+      alert(`Hiba: ${error.message}`);
+      // Re-enable button on error
+      if (farmNowBtn) {
+        farmNowBtn.disabled = false;
+        farmNowBtn.textContent = '🚜 Farm Most';
+      }
+    }
+  }
+
+  /**
    * Create a stat item for the statistics grid
    */
   createStatItem(label, value) {
@@ -971,6 +1106,10 @@ class DetailPanel extends Component {
     // Recruit button
     buttons.appendChild(this.createSidebarButton('👥', 'Toborzás', () => this.handleAction('recruit', account)));
 
+    // Farm Bot button
+    const farmBtn = this.createFarmSidebarButton(account);
+    buttons.appendChild(farmBtn);
+
     container.appendChild(buttons);
 
     return container;
@@ -992,6 +1131,437 @@ class DetailPanel extends Component {
     btn.appendChild(labelEl);
 
     return btn;
+  }
+
+  /**
+   * Create Farm Bot sidebar button with status indicator
+   */
+  createFarmSidebarButton(account) {
+    const btn = this.createElement('div', {
+      className: 'sidebar-btn farm-sidebar-btn',
+      id: `farm-sidebar-btn-${account.accountId}`,
+      onClick: () => this.openFarmModal(account)
+    });
+
+    const iconEl = this.createElement('div', { className: 'sidebar-btn-icon' }, '🚜');
+    btn.appendChild(iconEl);
+
+    const labelEl = this.createElement('div', { className: 'sidebar-btn-label' }, 'Farm');
+    btn.appendChild(labelEl);
+
+    // Status indicator dot
+    const statusDot = this.createElement('div', {
+      className: 'farm-status-dot',
+      id: `farm-dot-${account.accountId}`
+    });
+    btn.appendChild(statusDot);
+
+    // Load initial status
+    this.loadFarmButtonStatus(account.accountId);
+
+    return btn;
+  }
+
+  /**
+   * Load farm status for sidebar button
+   */
+  async loadFarmButtonStatus(accountId) {
+    try {
+      const response = await fetch(`/api/farm/status/${accountId}`);
+      const status = await response.json();
+      this.updateFarmButtonStatus(accountId, status);
+    } catch (error) {
+      console.error('Failed to load farm button status:', error);
+    }
+  }
+
+  /**
+   * Update farm sidebar button status dot
+   */
+  updateFarmButtonStatus(accountId, status) {
+    const dot = document.getElementById(`farm-dot-${accountId}`);
+    if (!dot) return;
+
+    dot.className = 'farm-status-dot';
+    if (status.isRunning) {
+      if (status.isFarming) {
+        dot.classList.add('farming');
+        dot.title = 'Farmol...';
+      } else if (status.isPaused) {
+        dot.classList.add('paused');
+        dot.title = 'Szünetel';
+      } else {
+        dot.classList.add('active');
+        dot.title = 'Aktív';
+      }
+    } else {
+      dot.classList.add('idle');
+      dot.title = 'Inaktív';
+    }
+
+    if (status.lastError) {
+      dot.classList.add('error');
+      dot.title = status.lastError;
+    }
+  }
+
+  /**
+   * Open Farm Bot modal
+   */
+  openFarmModal(account) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('farm-modal');
+    if (existingModal) existingModal.remove();
+
+    // Clear any existing status polling
+    if (this.farmStatusInterval) {
+      clearInterval(this.farmStatusInterval);
+      this.farmStatusInterval = null;
+    }
+
+    const modal = this.createElement('div', {
+      className: 'farm-modal-overlay',
+      id: 'farm-modal',
+      onClick: (e) => {
+        if (e.target.id === 'farm-modal') this.closeFarmModal();
+      }
+    });
+
+    const modalContent = this.createElement('div', { className: 'farm-modal-content' });
+
+    // Modal header
+    const header = this.createElement('div', { className: 'farm-modal-header' });
+    header.appendChild(this.createElement('h3', {}, '🚜 Farm Bot'));
+
+    const closeBtn = this.createElement('button', {
+      className: 'farm-modal-close',
+      onClick: () => this.closeFarmModal()
+    }, '×');
+    header.appendChild(closeBtn);
+    modalContent.appendChild(header);
+
+    // Modal body
+    const body = this.createElement('div', { className: 'farm-modal-body' });
+
+    // Status & Progress Card
+    const statusCard = this.createElement('div', { className: 'farm-status-card' });
+
+    // Status row
+    const statusRow = this.createElement('div', { className: 'farm-status-row' });
+    const statusLabel = this.createElement('span', { className: 'farm-label' }, 'Státusz:');
+    const statusBadge = this.createElement('span', {
+      className: 'farm-status-badge farm-status-idle',
+      id: `farm-modal-status-${account.accountId}`
+    }, 'Betöltés...');
+    statusRow.appendChild(statusLabel);
+    statusRow.appendChild(statusBadge);
+    statusCard.appendChild(statusRow);
+
+    // Next run row (hidden initially)
+    const nextRunRow = this.createElement('div', {
+      className: 'farm-status-row',
+      id: `farm-modal-nextrun-${account.accountId}`,
+      style: { display: 'none' }
+    });
+    const nextRunLabel = this.createElement('span', { className: 'farm-label' }, 'Következő:');
+    const nextRunDisplay = this.createElement('span', {
+      className: 'farm-next-run-value',
+      id: `farm-modal-nextrun-text-${account.accountId}`
+    }, '--:--');
+    nextRunRow.appendChild(nextRunLabel);
+    nextRunRow.appendChild(nextRunDisplay);
+    statusCard.appendChild(nextRunRow);
+
+    // Progress section (hidden initially)
+    const progressSection = this.createElement('div', {
+      className: 'farm-progress-section',
+      id: `farm-modal-progress-${account.accountId}`,
+      style: { display: 'none' }
+    });
+    const progressBar = this.createElement('div', { className: 'farm-progress-bar' });
+    const progressFill = this.createElement('div', {
+      className: 'farm-progress-fill',
+      id: `farm-modal-progress-fill-${account.accountId}`
+    });
+    progressBar.appendChild(progressFill);
+    progressSection.appendChild(progressBar);
+    const progressText = this.createElement('div', {
+      className: 'farm-progress-text',
+      id: `farm-modal-progress-text-${account.accountId}`
+    }, '0 / 0');
+    progressSection.appendChild(progressText);
+    statusCard.appendChild(progressSection);
+
+    body.appendChild(statusCard);
+
+    // Loop Settings Card
+    const settingsCard = this.createElement('div', { className: 'farm-settings-card' });
+    const settingsTitle = this.createElement('div', { className: 'farm-card-title' }, 'Loop Beállítások');
+    settingsCard.appendChild(settingsTitle);
+
+    const settingsGrid = this.createElement('div', { className: 'farm-settings-grid' });
+
+    // Interval input
+    const intervalGroup = this.createElement('div', { className: 'farm-setting-group' });
+    intervalGroup.appendChild(this.createElement('label', {}, 'Intervallum'));
+    const intervalWrapper = this.createElement('div', { className: 'farm-input-wrapper' });
+    const intervalInput = this.createElement('input', {
+      type: 'number',
+      id: `farm-modal-interval-${account.accountId}`,
+      className: 'farm-input',
+      value: '30',
+      min: '5',
+      max: '120'
+    });
+    intervalWrapper.appendChild(intervalInput);
+    intervalWrapper.appendChild(this.createElement('span', { className: 'farm-input-suffix' }, 'perc'));
+    intervalGroup.appendChild(intervalWrapper);
+    settingsGrid.appendChild(intervalGroup);
+
+    // Random delay input
+    const delayGroup = this.createElement('div', { className: 'farm-setting-group' });
+    delayGroup.appendChild(this.createElement('label', {}, 'Random'));
+    const delayWrapper = this.createElement('div', { className: 'farm-input-wrapper' });
+    delayWrapper.appendChild(this.createElement('span', { className: 'farm-input-prefix' }, '±'));
+    const delayInput = this.createElement('input', {
+      type: 'number',
+      id: `farm-modal-delay-${account.accountId}`,
+      className: 'farm-input',
+      value: '5',
+      min: '0',
+      max: '30'
+    });
+    delayWrapper.appendChild(delayInput);
+    delayWrapper.appendChild(this.createElement('span', { className: 'farm-input-suffix' }, 'perc'));
+    delayGroup.appendChild(delayWrapper);
+    settingsGrid.appendChild(delayGroup);
+
+    settingsCard.appendChild(settingsGrid);
+
+    // Save button inline with settings
+    const saveBtn = this.createElement('button', {
+      className: 'btn-farm-save-inline',
+      id: `farm-modal-save-${account.accountId}`,
+      onClick: () => this.handleFarmSaveSettings(account.accountId)
+    }, 'Mentés');
+    settingsCard.appendChild(saveBtn);
+
+    body.appendChild(settingsCard);
+
+    // Stats Card
+    const statsCard = this.createElement('div', { className: 'farm-stats-card' });
+    const statsInfo = this.createElement('div', {
+      className: 'farm-stats-info',
+      id: `farm-modal-stats-${account.accountId}`
+    }, 'Még nem futott');
+    statsCard.appendChild(statsInfo);
+    body.appendChild(statsCard);
+
+    modalContent.appendChild(body);
+
+    // Modal footer with action buttons
+    const footer = this.createElement('div', { className: 'farm-modal-footer' });
+
+    // Farm Now (single run) button
+    const farmNowBtn = this.createElement('button', {
+      className: 'btn-farm-action btn-farm-now',
+      id: `farm-modal-now-${account.accountId}`,
+      onClick: () => this.handleFarmNow(account.accountId)
+    }, 'Farm Most');
+    footer.appendChild(farmNowBtn);
+
+    // Start Loop Mode button
+    const startLoopBtn = this.createElement('button', {
+      className: 'btn-farm-action btn-farm-loop-start',
+      id: `farm-modal-start-loop-${account.accountId}`,
+      onClick: () => this.handleFarmStart(account.accountId)
+    }, 'Loop Indítás');
+    footer.appendChild(startLoopBtn);
+
+    // Stop Loop Mode button
+    const stopLoopBtn = this.createElement('button', {
+      className: 'btn-farm-action btn-farm-loop-stop',
+      id: `farm-modal-stop-loop-${account.accountId}`,
+      onClick: () => this.handleFarmStop(account.accountId),
+      style: { display: 'none' }
+    }, 'Loop Leállítás');
+    footer.appendChild(stopLoopBtn);
+
+    modalContent.appendChild(footer);
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+
+    // Load current status
+    this.loadFarmModalStatus(account.accountId);
+
+    // Start polling for status updates every 2 seconds while modal is open
+    this.farmStatusInterval = setInterval(() => {
+      const modalExists = document.getElementById('farm-modal');
+      if (modalExists) {
+        this.loadFarmModalStatus(account.accountId);
+      } else {
+        // Modal closed, stop polling
+        clearInterval(this.farmStatusInterval);
+        this.farmStatusInterval = null;
+      }
+    }, 2000);
+  }
+
+  /**
+   * Close farm modal
+   */
+  closeFarmModal() {
+    // Stop status polling
+    if (this.farmStatusInterval) {
+      clearInterval(this.farmStatusInterval);
+      this.farmStatusInterval = null;
+    }
+    const modal = document.getElementById('farm-modal');
+    if (modal) modal.remove();
+  }
+
+  /**
+   * Load farm status for modal
+   */
+  async loadFarmModalStatus(accountId) {
+    try {
+      const response = await fetch(`/api/farm/status/${accountId}`);
+      const status = await response.json();
+      this.updateFarmModalUI(accountId, status);
+    } catch (error) {
+      console.error('Failed to load farm modal status:', error);
+    }
+  }
+
+  /**
+   * Update farm modal UI based on status
+   */
+  updateFarmModalUI(accountId, status) {
+    const statusBadge = document.getElementById(`farm-modal-status-${accountId}`);
+    const startLoopBtn = document.getElementById(`farm-modal-start-loop-${accountId}`);
+    const stopLoopBtn = document.getElementById(`farm-modal-stop-loop-${accountId}`);
+    const farmNowBtn = document.getElementById(`farm-modal-now-${accountId}`);
+    const progressSection = document.getElementById(`farm-modal-progress-${accountId}`);
+    const progressFill = document.getElementById(`farm-modal-progress-fill-${accountId}`);
+    const progressText = document.getElementById(`farm-modal-progress-text-${accountId}`);
+    const statsInfo = document.getElementById(`farm-modal-stats-${accountId}`);
+    const nextRunSection = document.getElementById(`farm-modal-nextrun-${accountId}`);
+    const nextRunText = document.getElementById(`farm-modal-nextrun-text-${accountId}`);
+    const intervalInput = document.getElementById(`farm-modal-interval-${accountId}`);
+    const delayInput = document.getElementById(`farm-modal-delay-${accountId}`);
+
+    if (!statusBadge) return;
+
+    // Populate settings from status
+    if (status.settings) {
+      if (intervalInput) intervalInput.value = status.settings.intervalMinutes || 30;
+      if (delayInput) delayInput.value = status.settings.randomDelayMinutes || 5;
+    }
+
+    // Update status badge
+    statusBadge.className = 'farm-status-badge';
+    if (status.isFarming) {
+      statusBadge.textContent = 'Farmol...';
+      statusBadge.classList.add('farm-status-farming');
+    } else if (status.isRunning) {
+      if (status.isPaused) {
+        statusBadge.textContent = 'Szünetel';
+        statusBadge.classList.add('farm-status-paused');
+      } else {
+        statusBadge.textContent = 'Loop Aktív';
+        statusBadge.classList.add('farm-status-active');
+      }
+    } else {
+      statusBadge.textContent = 'Inaktív';
+      statusBadge.classList.add('farm-status-idle');
+    }
+
+    if (status.lastError) {
+      statusBadge.textContent = 'Hiba!';
+      statusBadge.classList.add('farm-status-error');
+      statusBadge.title = status.lastError;
+    }
+
+    // Update loop buttons
+    if (startLoopBtn && stopLoopBtn) {
+      if (status.isRunning) {
+        startLoopBtn.style.display = 'none';
+        stopLoopBtn.style.display = 'inline-block';
+      } else {
+        startLoopBtn.style.display = 'inline-block';
+        stopLoopBtn.style.display = 'none';
+      }
+    }
+
+    // Update Farm Now button
+    if (farmNowBtn) {
+      if (status.isFarming) {
+        farmNowBtn.disabled = true;
+        farmNowBtn.textContent = 'Farmolás...';
+        farmNowBtn.classList.add('farming');
+      } else {
+        farmNowBtn.disabled = false;
+        farmNowBtn.textContent = 'Farm Most';
+        farmNowBtn.classList.remove('farming');
+      }
+    }
+
+    // Update progress
+    if (progressSection && status.currentProgress) {
+      const { current, total } = status.currentProgress;
+      progressSection.style.display = 'block';
+      const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+      if (progressFill) progressFill.style.width = `${percent}%`;
+      if (progressText) progressText.textContent = `${current} / ${total}`;
+    } else if (progressSection && !status.isFarming) {
+      progressSection.style.display = 'none';
+    }
+
+    // Update stats
+    if (statsInfo) {
+      if (status.lastRun) {
+        const lastRunDate = new Date(status.lastRun).toLocaleString('hu-HU');
+        let statsText = `Utolsó futás: ${lastRunDate}`;
+        if (status.loopCount) {
+          statsText += ` | Ciklusok: ${status.loopCount}`;
+        }
+        if (status.totalFarmed) {
+          statsText += ` | Összesen: ${status.totalFarmed}`;
+        }
+        statsInfo.textContent = statsText;
+      } else {
+        statsInfo.textContent = 'Még nem futott';
+      }
+    }
+
+    // Update next run countdown
+    if (nextRunSection && nextRunText) {
+      if (status.isRunning && status.nextRun && !status.isFarming) {
+        nextRunSection.style.display = 'block';
+        const now = Date.now();
+        const nextRun = new Date(status.nextRun).getTime();
+        const diff = nextRun - now;
+
+        if (diff > 0) {
+          const minutes = Math.floor(diff / 60000);
+          const seconds = Math.floor((diff % 60000) / 1000);
+          nextRunText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          nextRunText.style.color = 'var(--tw-btn-green)';
+        } else {
+          nextRunText.textContent = 'Hamarosan...';
+          nextRunText.style.color = 'var(--status-warning)';
+        }
+      } else if (status.isFarming) {
+        nextRunSection.style.display = 'block';
+        nextRunText.textContent = 'Farmolás folyamatban...';
+        nextRunText.style.color = 'var(--tw-btn-green)';
+      } else {
+        nextRunSection.style.display = 'none';
+      }
+    }
+
+    // Also update sidebar button
+    this.updateFarmButtonStatus(accountId, status);
   }
 
   /**

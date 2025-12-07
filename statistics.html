@@ -1,0 +1,323 @@
+<table align="center" id="contentContainer" width="100%">
+    <tbody><tr>
+        <td>
+            <table class="content-border" width="100%" cellspacing="0">
+                <tbody><tr>
+                    <td id="inner-border">
+                        <table class="main" align="left">
+                            <tbody><tr>
+                                <td id="content_value">
+                                    
+                                    <h2>Profil</h2>
+
+
+<table class="vis modemenu">
+<tbody><tr>
+                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=info_player">norbertnagy95 </a></td>                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=relic_system">Kincstár </a></td>                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=inventory">Leltár </a></td>                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=info_player&amp;mode=awards">Eredmények </a></td>                    <td class="selected" style="min-width: 80px"><a href="/game.php?village=353&amp;screen=info_player&amp;mode=stats_own">Statisztikák </a></td>                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=buddies">Barátok </a></td>                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=info_player&amp;mode=daily_bonus">Napi jutalmak </a></td>                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=mentor">Mentor </a></td>                    <td style="min-width: 80px"><a href="/game.php?village=353&amp;screen=info_player&amp;mode=block">Tiltólista </a></td>            </tr>
+</tbody></table>
+<br>
+
+
+
+<!-- player points -->
+<div class="vis graph_widget ">
+<h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/player_points.webp" alt=""> Játékos pontok</h4>
+<div class="graph">
+    <div id="graph_player_points" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 19px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 89px; text-align: center;">03 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 160px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 230px; text-align: center;">05 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 301px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 19px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 148px; left: 6px; text-align: right;">500</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 74px; left: 0px; text-align: right;">1000</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 0px; left: 0px; text-align: right;">1500</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // graph player points
+        InfoPlayer.Stats.createGraph('graph_player_points', 'line', [["1764630108000","0"],["1764651708000","0"],["1764673308000","143"],["1764694908000","162"],["1764716508000","205"],["1764738108000","288"],["1764759708000","352"],["1764781308000","394"],["1764802909000","417"],["1764824508000","485"],["1764846108000","558"],["1764867708000","656"],["1764889308000","717"],["1764910908000","784"],["1764932509000","865"],["1764954108000","989"],["1764975708000","1066"],["1764997308000","1102"],["1765018909000","1185"],["1765040508000","1243"]]);
+    });
+</script>
+</div>
+
+
+<!-- player village count -->
+<div class="vis graph_widget ">
+<h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/player_villages.webp" alt=""> Játékos falvak</h4>
+<div class="graph">
+    <div id="graph_player_villages" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 4px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 77px; text-align: center;">03 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 151px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 225px; text-align: center;">05 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 298px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 0px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 111px; left: 0px; text-align: right;">1</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 0px; left: 0px; text-align: right;">2</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        InfoPlayer.Stats.createGraph('graph_player_villages', 'line', [["1764630108000","0"],["1764651708000","0"],["1764673308000","1"],["1764694908000","1"],["1764716508000","1"],["1764738108000","1"],["1764759708000","1"],["1764781308000","1"],["1764802909000","1"],["1764824508000","1"],["1764846108000","1"],["1764867708000","1"],["1764889308000","1"],["1764910908000","1"],["1764932509000","1"],["1764954108000","1"],["1764975708000","1"],["1764997308000","1"],["1765018909000","1"],["1765040508000","1"]]);
+    });
+</script>
+</div>
+
+
+<!-- player rank -->
+<div class="vis graph_widget ">
+<h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/player_points.webp" alt=""> Játékos ranglista</h4>
+<div class="graph">
+    <div id="graph_player_rank" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 13px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 84px; text-align: center;">03 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 156px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 228px; text-align: center;">05 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 300px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 0px; left: 13px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 44px; left: 0px; text-align: right;">100</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 89px; left: 0px; text-align: right;">200</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 133px; left: 0px; text-align: right;">300</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 178px; left: 0px; text-align: right;">400</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 0px; text-align: right;">500</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        var data = [{data: [["1764630108000","251"],["1764651708000","256"],["1764673308000","191"],["1764694908000","456"],["1764716508000","434"],["1764738108000","77"],["1764759708000","25"],["1764781308000","22"],["1764802909000","27"],["1764824508000","15"],["1764846108000","12"],["1764867708000","9"],["1764889308000","9"],["1764910908000","7"],["1764932509000","7"],["1764954108000","6"],["1764975708000","6"],["1764997308000","6"],["1765018909000","7"],["1765040508000","8"]], color: 'green'}];
+        var graph = new Graph($('#graph_player_rank'), 'line', data);
+        if (graph.getMinYValue() < 10) {
+            // the player cannot get better than rank 1
+            // but this should not be the axis minimum unless the player is close to it
+            graph.settings.yaxis.min = 1;
+        }
+        graph.invertYAxis();
+        InfoPlayer.Stats.addGraph(graph);
+    });
+</script>
+</div>
+
+
+<!-- Tribe points -->
+    <div class="vis graph_widget ">
+    <h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/tribe_points.webp" alt="">  Klán pontok</h4>
+    <div class="graph">
+        <div id="graph_ally_points" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 70px; text-align: center;">28 Nov.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 135px; text-align: center;">30 Nov.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 199px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 263px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 55px; top: 238px; left: 328px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 33px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 185px; left: 6px; text-align: right;">5.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 148px; left: 0px; text-align: right;">10.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 111px; left: 0px; text-align: right;">15.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 74px; left: 0px; text-align: right;">20.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 37px; left: 0px; text-align: right;">25.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 0px; left: 0px; text-align: right;">30.00 E</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+
+        <script>
+            $(document).ready(function() {
+                InfoPlayer.Stats.createGraph('graph_ally_points', 'line', [["1764179089000","0"],["1764200689000","0"],["1764222289000","0"],["1764243889000","0"],["1764265489000","0"],["1764287089000","0"],["1764308689000","0"],["1764327709000","0"],["1764349308000","0"],["1764370908000","0"],["1764392508000","0"],["1764414108000","0"],["1764435708000","0"],["1764457308000","0"],["1764478908000","0"],["1764500508000","0"],["1764522108000","0"],["1764543708000","0"],["1764565308000","0"],["1764586908000","0"],["1764608508000","0"],["1764630108000","0"],["1764651708000","0"],["1764673308000","3901"],["1764694908000","7630"],["1764716508000","9228"],["1764738108000","9807"],["1764759708000","11084"],["1764781308000","12172"],["1764802909000","13520"],["1764824508000","14142"],["1764846108000","15475"],["1764867708000","16320"],["1764889308000","17493"],["1764910908000","18216"],["1764932509000","19607"],["1764954108000","21422"],["1764975708000","22766"],["1764997308000","23577"],["1765018909000","24756"],["1765040508000","26222"]]);
+            });
+        </script>
+    </div>
+</div>
+
+
+<!-- villages looted -->
+    <div class="vis graph_widget ">
+    <h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/player_villages.webp" alt=""> Kifosztott faluk</h4>
+    <div class="graph">
+        <div id="graph_villages_looted" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 102px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 214px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 325px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 19px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 178px; left: 6px; text-align: right;">500</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 134px; left: 0px; text-align: right;">1000</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 90px; left: 0px; text-align: right;">1500</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 46px; left: 0px; text-align: right;">2000</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 2px; left: 0px; text-align: right;">2500</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            InfoPlayer.Stats.createGraph('graph_villages_looted', 'bar', [["1764975600000","2043"],["1764889200000","1715"],["1764802800000","1363"],["1764716400000","91"],["1764630000000","5"],["1764543600000","0"]]);
+        });
+    </script>
+</div>
+
+<!-- looted resources (simple) -->
+    <div class="vis graph_widget ">
+    <h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/res.webp" alt=""> Zsákmányolt nyersanyagok</h4>
+    <div class="graph">
+        <div id="graph_loot" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 112px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 219px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 326px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 33px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 167px; left: 0px; text-align: right;">10.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 112px; left: 0px; text-align: right;">20.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 57px; left: 0px; text-align: right;">30.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 2px; left: 0px; text-align: right;">40.00 E</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            InfoPlayer.Stats.createGraph('graph_loot', 'bar', [["1764975600000","36665"],["1764889200000","35581"],["1764802800000","18878"],["1764716400000","1634"],["1764630000000","2509"],["1764543600000","0"]]);
+        });
+    </script>
+</div>
+
+<!-- looted resources (detailed resource breakdown) -->
+
+
+<!-- enemy units killed -->
+    <div class="vis graph_widget ">
+    <h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/kill.webp" alt=""> Megölt egységek</h4>
+    <div class="graph">
+        <div id="graph_enemy_units" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 91px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 208px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 324px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 112px; left: 5px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 2px; left: 5px; text-align: right;">1</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 0px; text-align: right;">-1</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            InfoPlayer.Stats.createGraph('graph_enemy_units', 'bar', [["1764975600000","0"],["1764889200000","0"],["1764802800000","0"],["1764716400000","0"],["1764630000000","0"],["1764543600000","0"]]);
+        });
+    </script>
+</div>
+
+
+<!-- troop gains / losses -->
+<div class="vis graph_widget ">
+<h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/kill.webp" alt=""> Nyertes / vesztes csapatok</h4>
+<div class="graph">
+    <div id="graph_units_diff" class="graph_canvas" style="padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 97px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 211px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 78px; top: 238px; left: 325px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 222px; left: 13px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 178px; left: 6px; text-align: right;">50</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 134px; left: 0px; text-align: right;">100</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 90px; left: 0px; text-align: right;">150</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 46px; left: 0px; text-align: right;">200</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 2px; left: 0px; text-align: right;">250</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 250px;" width="390" height="250"></canvas></div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        var data = [
+            { data: [["1764975600000","0"],["1764889200000","211"],["1764802800000","69"],["1764716400000","70"],["1764630000000","52"],["1764543600000","0"]], color:'green'},
+            { data: [], color:'red'}
+        ];
+        var graph = new Graph($('#graph_units_diff'), 'bar', data);
+        graph.settings.legend = {position:'nw'};
+        graph.settings.yaxis.min = null;
+        InfoPlayer.Stats.addGraph(graph);
+    });
+</script>
+</div>
+
+
+<!-- resource spending stacked bar -->
+    <div class="vis graph_widget ">
+    <h4 class="head"><img src="https://dshu.innogamescdn.com/asset/ae6c0149/graphic/welcome/res.webp" alt=""> Elköltött nyersanyagok</h4>
+    <div class="graph">
+        <div id="graph_resource_spending" class="graph_canvas" style="height: 226px; padding: 0px; position: relative;"><canvas class="flot-base" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 226px;" width="390" height="226"></canvas><div class="flot-text" style="position: absolute; inset: 0px; font-size: smaller; color: rgb(84, 84, 84);"><div class="flot-x-axis flot-x1-axis xAxis x1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 48px; top: 214px; left: 63px; text-align: center;">01 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 48px; top: 214px; left: 116px; text-align: center;">02 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 48px; top: 214px; left: 169px; text-align: center;">03 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 48px; top: 214px; left: 222px; text-align: center;">04 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 48px; top: 214px; left: 275px; text-align: center;">05 Dec.</div><div class="flot-tick-label tickLabel" style="position: absolute; max-width: 48px; top: 214px; left: 328px; text-align: center;">06 Dec.</div></div><div class="flot-y-axis flot-y1-axis yAxis y1Axis" style="position: absolute; inset: 0px;"><div class="flot-tick-label tickLabel" style="position: absolute; top: 198px; left: 39px; text-align: right;">0</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 149px; left: 6px; text-align: right;">50.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 100px; left: 0px; text-align: right;">100.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 51px; left: 0px; text-align: right;">150.00 E</div><div class="flot-tick-label tickLabel" style="position: absolute; top: 2px; left: 0px; text-align: right;">200.00 E</div></div></div><canvas class="flot-overlay" style="direction: ltr; position: absolute; left: 0px; top: 0px; width: 390px; height: 226px;" width="390" height="226"></canvas></div>
+        <div class="center">
+            <div id="graph_resource_spending_legend" style="display:inline-block;">
+                <table style="font-size:smaller;color:#545454">
+                        <tbody><tr>
+                                                                    <td class="" data-title=" :: &lt;div class=&quot;warstats_popup_date&quot;&gt;Az utolsó 7 nap&lt;/div&gt;Egységek: 33%&lt;br/&gt;&lt;span class=&quot;icon header wood&quot; title=&quot;Fa&quot;&gt; &lt;/span&gt;55&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;045&lt;br/&gt;&lt;span class=&quot;icon header stone&quot; title=&quot;Agyag&quot;&gt; &lt;/span&gt;38&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;640&lt;br/&gt;&lt;span class=&quot;icon header iron&quot; title=&quot;Vas&quot;&gt; &lt;/span&gt;84&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;940">
+                                    <div class="graph_legend_colorbox" style="background-color:#00C4CF"></div>
+                                    Egységek                                        </td>
+                                                                    <td class="" data-title=" :: &lt;div class=&quot;warstats_popup_date&quot;&gt;Az utolsó 7 nap&lt;/div&gt;Épületek: 62.7%&lt;br/&gt;&lt;span class=&quot;icon header wood&quot; title=&quot;Fa&quot;&gt; &lt;/span&gt;124&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;927&lt;br/&gt;&lt;span class=&quot;icon header stone&quot; title=&quot;Agyag&quot;&gt; &lt;/span&gt;131&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;945&lt;br/&gt;&lt;span class=&quot;icon header iron&quot; title=&quot;Vas&quot;&gt; &lt;/span&gt;83&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;012">
+                                    <div class="graph_legend_colorbox" style="background-color:#8A5319"></div>
+                                    Épületek                                        </td>
+                                                                    <td class="" data-title=" :: &lt;div class=&quot;warstats_popup_date&quot;&gt;Az utolsó 7 nap&lt;/div&gt;Lovag: 0%&lt;br/&gt;&lt;span class=&quot;icon header wood&quot; title=&quot;Fa&quot;&gt; &lt;/span&gt;20&lt;br/&gt;&lt;span class=&quot;icon header stone&quot; title=&quot;Agyag&quot;&gt; &lt;/span&gt;20&lt;br/&gt;&lt;span class=&quot;icon header iron&quot; title=&quot;Vas&quot;&gt; &lt;/span&gt;40">
+                                    <div class="graph_legend_colorbox" style="background-color:#0022BA"></div>
+                                    Lovag                                        </td>
+                                                                    <td class="" data-title=" :: &lt;div class=&quot;warstats_popup_date&quot;&gt;Az utolsó 7 nap&lt;/div&gt;Fejlesztés: 2.6%&lt;br/&gt;&lt;span class=&quot;icon header wood&quot; title=&quot;Fa&quot;&gt; &lt;/span&gt;4&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;660&lt;br/&gt;&lt;span class=&quot;icon header stone&quot; title=&quot;Agyag&quot;&gt; &lt;/span&gt;5&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;320&lt;br/&gt;&lt;span class=&quot;icon header iron&quot; title=&quot;Vas&quot;&gt; &lt;/span&gt;4&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;100">
+                                    <div class="graph_legend_colorbox" style="background-color:#7B04C4"></div>
+                                    Fejlesztés                                        </td>
+                                                                    <td class="" data-title=" :: &lt;div class=&quot;warstats_popup_date&quot;&gt;Az utolsó 7 nap&lt;/div&gt;Kereskedelem: 1.7%&lt;br/&gt;&lt;span class=&quot;icon header wood&quot; title=&quot;Fa&quot;&gt; &lt;/span&gt;6&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;000&lt;br/&gt;&lt;span class=&quot;icon header stone&quot; title=&quot;Agyag&quot;&gt; &lt;/span&gt;3&lt;span class=&quot;grey&quot;&gt;.&lt;/span&gt;000&lt;br/&gt;&lt;span class=&quot;icon header iron&quot; title=&quot;Vas&quot;&gt; &lt;/span&gt;0">
+                                    <div class="graph_legend_colorbox" style="background-color:green"></div>
+                                    Kereskedelem                                        </td>
+                                                            </tr>
+                </tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            var data = [];
+
+                                    data.push({
+                    label: 'Egységek',
+                    data: [["1764975600000","65905"],["1764889200000","54730"],["1764802800000","33250"],["1764716400000","23750"],["1764630000000","990"],["1764543600000","0"]],
+                    details: [{"time":"1764975600000","wood":"21585","stone":"14430","iron":"29890","total":"65905","percent":47.092827999171114},{"time":"1764889200000","wood":"17910","stone":"11880","iron":"24940","total":"54730","percent":31.475368353251056},{"time":"1764802800000","wood":"8750","stone":"7000","iron":"17500","total":"33250","percent":25.647156829471477},{"time":"1764716400000","wood":"6250","stone":"5000","iron":"12500","total":"23750","percent":30.86700544558959},{"time":"1764630000000","wood":"550","stone":"330","iron":"110","total":"990","percent":4.658165905989742},{"time":"1764543600000","wood":"0","stone":"0","iron":"0","total":"0","percent":0}],
+                    color: '#00C4CF',
+                    createTooltipContents: function(data_index) {
+                        var date = new Date(parseInt(this.data[data_index][0]));
+                        var details = this.details[data_index];
+
+                        var tooltip_contents =
+                            '<div class="warstats_popup_date">' + date.toLocaleDateString() + '</div>' +
+                            '<div>' + this.label + ': ' + (Math.round(details.percent * 10) / 10) + '%</div>' +
+                            '<div>' +
+                            '<span class=\"icon header wood\" title=\"Fa\"> </span>' + number_format(details.wood, '.') +
+                            '<br/> <span class=\"icon header stone\" title=\"Agyag\"> </span>' + number_format(details.stone, '.') +
+                            '<br/> <span class=\"icon header iron\" title=\"Vas\"> </span>' + number_format(details.iron, '.') +
+                            '</div>';
+
+                        return tooltip_contents;
+                    }
+                });
+                                    data.push({
+                    label: 'Épületek',
+                    data: [["1764975600000","70442"],["1764889200000","113152"],["1764802800000","92514"],["1764716400000","43593"],["1764630000000","20183"],["1764543600000","0"]],
+                    details: [{"time":"1764975600000","wood":"25711","stone":"26531","iron":"18200","total":"70442","percent":50.33476959134529},{"time":"1764889200000","wood":"42314","stone":"45104","iron":"25734","total":"113152","percent":65.07401571180456},{"time":"1764802800000","wood":"33260","stone":"37118","iron":"22136","total":"92514","percent":71.3600320878714},{"time":"1764716400000","wood":"15960","stone":"15911","iron":"11722","total":"43593","percent":56.6562260374563},{"time":"1764630000000","wood":"7682","stone":"7281","iron":"5220","total":"20183","percent":94.96541664706159},{"time":"1764543600000","wood":"0","stone":"0","iron":"0","total":"0","percent":0}],
+                    color: '#8A5319',
+                    createTooltipContents: function(data_index) {
+                        var date = new Date(parseInt(this.data[data_index][0]));
+                        var details = this.details[data_index];
+
+                        var tooltip_contents =
+                            '<div class="warstats_popup_date">' + date.toLocaleDateString() + '</div>' +
+                            '<div>' + this.label + ': ' + (Math.round(details.percent * 10) / 10) + '%</div>' +
+                            '<div>' +
+                            '<span class=\"icon header wood\" title=\"Fa\"> </span>' + number_format(details.wood, '.') +
+                            '<br/> <span class=\"icon header stone\" title=\"Agyag\"> </span>' + number_format(details.stone, '.') +
+                            '<br/> <span class=\"icon header iron\" title=\"Vas\"> </span>' + number_format(details.iron, '.') +
+                            '</div>';
+
+                        return tooltip_contents;
+                    }
+                });
+                                    data.push({
+                    label: 'Lovag',
+                    data: [["1764975600000","0"],["1764889200000","0"],["1764802800000","0"],["1764716400000","0"],["1764630000000","80"],["1764543600000","0"]],
+                    details: [{"time":"1764975600000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764889200000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764802800000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764716400000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764630000000","wood":"20","stone":"20","iron":"40","total":"80","percent":0.3764174469486661},{"time":"1764543600000","wood":"0","stone":"0","iron":"0","total":"0","percent":0}],
+                    color: '#0022BA',
+                    createTooltipContents: function(data_index) {
+                        var date = new Date(parseInt(this.data[data_index][0]));
+                        var details = this.details[data_index];
+
+                        var tooltip_contents =
+                            '<div class="warstats_popup_date">' + date.toLocaleDateString() + '</div>' +
+                            '<div>' + this.label + ': ' + (Math.round(details.percent * 10) / 10) + '%</div>' +
+                            '<div>' +
+                            '<span class=\"icon header wood\" title=\"Fa\"> </span>' + number_format(details.wood, '.') +
+                            '<br/> <span class=\"icon header stone\" title=\"Agyag\"> </span>' + number_format(details.stone, '.') +
+                            '<br/> <span class=\"icon header iron\" title=\"Vas\"> </span>' + number_format(details.iron, '.') +
+                            '</div>';
+
+                        return tooltip_contents;
+                    }
+                });
+                                    data.push({
+                    label: 'Fejlesztés',
+                    data: [["1764975600000","3600"],["1764889200000","0"],["1764802800000","3880"],["1764716400000","6600"],["1764630000000","0"],["1764543600000","0"]],
+                    details: [{"time":"1764975600000","wood":"1200","stone":"1600","iron":"800","total":"3600","percent":2.57240240948359},{"time":"1764889200000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764802800000","wood":"1260","stone":"1320","iron":"1300","total":"3880","percent":2.9928110826571226},{"time":"1764716400000","wood":"2200","stone":"2400","iron":"2000","total":"6600","percent":8.57777835540595},{"time":"1764630000000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764543600000","wood":"0","stone":"0","iron":"0","total":"0","percent":0}],
+                    color: '#7B04C4',
+                    createTooltipContents: function(data_index) {
+                        var date = new Date(parseInt(this.data[data_index][0]));
+                        var details = this.details[data_index];
+
+                        var tooltip_contents =
+                            '<div class="warstats_popup_date">' + date.toLocaleDateString() + '</div>' +
+                            '<div>' + this.label + ': ' + (Math.round(details.percent * 10) / 10) + '%</div>' +
+                            '<div>' +
+                            '<span class=\"icon header wood\" title=\"Fa\"> </span>' + number_format(details.wood, '.') +
+                            '<br/> <span class=\"icon header stone\" title=\"Agyag\"> </span>' + number_format(details.stone, '.') +
+                            '<br/> <span class=\"icon header iron\" title=\"Vas\"> </span>' + number_format(details.iron, '.') +
+                            '</div>';
+
+                        return tooltip_contents;
+                    }
+                });
+                                    data.push({
+                    label: 'Kereskedelem',
+                    data: [["1764975600000","0"],["1764889200000","6000"],["1764802800000","0"],["1764716400000","3000"],["1764630000000","0"],["1764543600000","0"]],
+                    details: [{"time":"1764975600000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764889200000","wood":"6000","stone":"0","iron":"0","total":"6000","percent":3.4506159349443877},{"time":"1764802800000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764716400000","wood":"0","stone":"3000","iron":"0","total":"3000","percent":3.898990161548159},{"time":"1764630000000","wood":"0","stone":"0","iron":"0","total":"0","percent":0},{"time":"1764543600000","wood":"0","stone":"0","iron":"0","total":"0","percent":0}],
+                    color: 'green',
+                    createTooltipContents: function(data_index) {
+                        var date = new Date(parseInt(this.data[data_index][0]));
+                        var details = this.details[data_index];
+
+                        var tooltip_contents =
+                            '<div class="warstats_popup_date">' + date.toLocaleDateString() + '</div>' +
+                            '<div>' + this.label + ': ' + (Math.round(details.percent * 10) / 10) + '%</div>' +
+                            '<div>' +
+                            '<span class=\"icon header wood\" title=\"Fa\"> </span>' + number_format(details.wood, '.') +
+                            '<br/> <span class=\"icon header stone\" title=\"Agyag\"> </span>' + number_format(details.stone, '.') +
+                            '<br/> <span class=\"icon header iron\" title=\"Vas\"> </span>' + number_format(details.iron, '.') +
+                            '</div>';
+
+                        return tooltip_contents;
+                    }
+                });
+            
+            var graph = new Graph($('#graph_resource_spending'), 'bar_stacked', data);
+            graph.settings.legend = {
+                show: false
+            };
+            InfoPlayer.Stats.addGraph(graph);
+        });
+    </script>
+</div>
+
+<script>
+$(function() {
+    InfoPlayer.Stats.init();
+});
+</script>
+
+
+                                   </td>
+                            </tr>
+                        </tbody></table>
+                    </td>
+                </tr>
+            </tbody></table>
+        </td>
+    </tr>
+</tbody></table>

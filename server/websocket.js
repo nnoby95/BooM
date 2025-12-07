@@ -8,6 +8,8 @@ const { accountState } = require('./state/accounts');
 const { logger } = require('./utils/logger');
 const templateManager = require('./state/templates');
 const templateExecutor = require('./services/templateExecutor');
+const { farmBot } = require('./services/farmBot');
+const { debugLog } = require('./services/debugLog');
 
 // Configuration
 const CONFIG = {
@@ -65,6 +67,8 @@ function initWebSocket(server) {
       if (accountId && sessionId) {
         // Use session-specific disconnect for multi-tab support
         accountState.disconnectSession(accountId, sessionId);
+        // Log to debug log
+        debugLog.addLog(accountId, 'disconnect', 'Disconnected', { sessionId });
       }
       if (pingTimer) {
         clearInterval(pingTimer);
@@ -152,6 +156,23 @@ function handleMessage(ws, message, context, updateContext) {
       handleStopTemplateExecution(ws, message);
       break;
 
+    // Farm bot operations
+    case 'farmProgress':
+      handleFarmProgress(ws, message, context);
+      break;
+
+    case 'farmComplete':
+      handleFarmComplete(ws, message, context);
+      break;
+
+    case 'farmError':
+      handleFarmError(ws, message, context);
+      break;
+
+    case 'farmDebug':
+      handleFarmDebug(ws, message, context);
+      break;
+
     default:
       logger.warn('Unknown message type', { type, accountId: context.accountId });
       ws.send(JSON.stringify({
@@ -220,6 +241,14 @@ function handleRegister(ws, message, updateContext) {
     isMaster,
     wasMaster: wasMaster || false,
     totalConnections: connections.length
+  });
+
+  // Log to debug log for dashboard
+  debugLog.addLog(accountId, 'connect', `Connected (${isMaster ? 'master' : 'slave'})`, {
+    sessionId,
+    world,
+    villageName,
+    connections: connections.length
   });
 }
 
@@ -789,10 +818,149 @@ function handleStopTemplateExecution(ws, message) {
   }
 }
 
+/**
+ * Handle farm progress report from userscript
+ */
+function handleFarmProgress(ws, message, context) {
+  if (!context.authenticated) {
+    return;
+  }
+
+  const { actionId, current, total } = message;
+
+  logger.debug('Farm progress', {
+    accountId: context.accountId,
+    actionId,
+    progress: `${current}/${total}`
+  });
+
+  farmBot.handleProgress(context.accountId, { actionId, current, total });
+
+  // Broadcast to dashboards
+  broadcastToDashboards('farmProgress', {
+    accountId: context.accountId,
+    actionId,
+    current,
+    total
+  });
+
+  // Log to debug log (only log every 10th progress to avoid spam)
+  if (current % 10 === 0 || current === total) {
+    debugLog.addLog(context.accountId, 'farmProgress', `Progress: ${current}/${total}`, { actionId, current, total });
+  }
+}
+
+/**
+ * Handle farm completion from userscript
+ */
+function handleFarmComplete(ws, message, context) {
+  if (!context.authenticated) {
+    return;
+  }
+
+  const { actionId, farmed, duration, emptyRun } = message;
+
+  if (emptyRun) {
+    logger.info('Farm completed (empty run - no villages to farm)', {
+      accountId: context.accountId,
+      actionId,
+      emptyRun: true
+    });
+  } else {
+    logger.info('Farm completed', {
+      accountId: context.accountId,
+      actionId,
+      farmed,
+      durationSec: Math.round(duration / 1000)
+    });
+  }
+
+  farmBot.handleComplete(context.accountId, { actionId, farmed, duration, emptyRun });
+
+  // Broadcast to dashboards
+  broadcastToDashboards('farmComplete', {
+    accountId: context.accountId,
+    actionId,
+    farmed,
+    duration,
+    emptyRun: emptyRun || false
+  });
+
+  // Log to debug log
+  const msg = emptyRun ? 'Farm completed (empty)' : `Farm completed: ${farmed} villages`;
+  debugLog.addLog(context.accountId, 'farmComplete', msg, { actionId, farmed, duration, emptyRun });
+}
+
+/**
+ * Handle farm error from userscript
+ */
+function handleFarmError(ws, message, context) {
+  if (!context.authenticated) {
+    return;
+  }
+
+  const { actionId, error, message: errorMessage } = message;
+
+  logger.error('Farm error', {
+    accountId: context.accountId,
+    actionId,
+    error,
+    message: errorMessage
+  });
+
+  farmBot.handleError(context.accountId, { actionId, error, message: errorMessage });
+
+  // Broadcast to dashboards
+  broadcastToDashboards('farmError', {
+    accountId: context.accountId,
+    actionId,
+    error,
+    message: errorMessage
+  });
+
+  // Log to debug log
+  const logType = error === 'botProtection' ? 'botProtection' : 'farmError';
+  debugLog.addLog(context.accountId, logType, errorMessage || error, { actionId, error });
+}
+
+/**
+ * Handle farm debug message from userscript
+ * Logs debug info from farm tab to server console for troubleshooting
+ */
+function handleFarmDebug(ws, message, context) {
+  if (!context.accountId) {
+    logger.warn('FarmDebug from unregistered connection');
+    return;
+  }
+
+  const { actionId, message: debugMessage, data, timestamp } = message;
+
+  // Log to server console with bright color for visibility
+  logger.info(`[FARM DEBUG] ${context.accountId}`, {
+    actionId,
+    message: debugMessage,
+    data: data || {},
+    timestamp: new Date(timestamp).toISOString()
+  });
+
+  // Also broadcast to dashboards so it shows in real-time
+  broadcastToDashboards('farmDebug', {
+    accountId: context.accountId,
+    actionId,
+    message: debugMessage,
+    data: data || {},
+    timestamp
+  });
+
+  // Log to debug log
+  debugLog.addLog(context.accountId, 'farmDebug', debugMessage, { actionId, ...data });
+}
+
 module.exports = {
   initWebSocket,
   CONFIG,
   sendToAccount,
   getAccountById,
-  getAccounts
+  getAccounts,
+  debugLog
 };

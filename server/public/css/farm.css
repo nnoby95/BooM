@@ -1,0 +1,670 @@
+/**
+ * Farm Bot Styles
+ * Styling for the farm bot section in detail panel
+ */
+
+/* Farm Section Container */
+.farm-section {
+    background: linear-gradient(135deg, rgba(93, 126, 30, 0.1) 0%, rgba(61, 90, 15, 0.15) 100%);
+    border: 1px solid var(--tw-btn-green-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+}
+
+/* Farm Controls */
+.farm-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.farm-control-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.farm-control-group label {
+    font-size: 12px;
+    color: var(--tw-text-dark);
+    font-weight: 600;
+}
+
+.farm-select {
+    padding: 4px 8px;
+    border: 1px solid var(--tw-border-medium);
+    border-radius: var(--radius-sm);
+    background: var(--tw-bg-input);
+    color: var(--tw-text-dark);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.farm-select:focus {
+    outline: none;
+    border-color: var(--tw-btn-green);
+}
+
+/* Farm Button Group */
+.farm-button-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-left: auto;
+}
+
+.btn-farm-start {
+    background: linear-gradient(to bottom, var(--tw-btn-green-hover), var(--tw-btn-green));
+    border: 1px solid var(--tw-btn-green-border);
+    color: white;
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.btn-farm-start:hover {
+    background: linear-gradient(to bottom, #7da528, var(--tw-btn-green-hover));
+    transform: translateY(-1px);
+}
+
+.btn-farm-stop {
+    background: linear-gradient(to bottom, var(--tw-btn-red-hover), var(--tw-btn-red));
+    border: 1px solid #600;
+    color: white;
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.btn-farm-stop:hover {
+    background: linear-gradient(to bottom, #c00, var(--tw-btn-red-hover));
+    transform: translateY(-1px);
+}
+
+/* Status Badge */
+.farm-status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.farm-status-idle {
+    background: #666;
+    color: white;
+}
+
+.farm-status-active {
+    background: var(--tw-btn-green);
+    color: white;
+    animation: pulse-green 2s infinite;
+}
+
+.farm-status-farming {
+    background: #4CAF50;
+    color: white;
+    animation: pulse-bright 1s infinite;
+}
+
+.farm-status-paused {
+    background: var(--status-warning);
+    color: #333;
+}
+
+.farm-status-error {
+    background: var(--status-danger);
+    color: white;
+    animation: shake 0.5s;
+}
+
+/* Progress Container */
+.farm-progress-container {
+    margin-top: var(--spacing-md);
+}
+
+.farm-progress-bar {
+    height: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--tw-border-medium);
+}
+
+.farm-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--tw-btn-green), #8BC34A);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    min-width: 0%;
+}
+
+.farm-progress-text {
+    text-align: center;
+    font-size: 11px;
+    color: var(--tw-text-dark);
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+/* Farm Stats */
+.farm-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--spacing-sm);
+    border-top: 1px dashed var(--tw-border-light);
+}
+
+/* Animations */
+@keyframes pulse-green {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(93, 126, 30, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(93, 126, 30, 0);
+    }
+}
+
+@keyframes pulse-bright {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Next Run Countdown */
+.farm-next-run {
+    font-size: 11px;
+    color: var(--tw-text-dark);
+    background: rgba(255, 255, 255, 0.3);
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+/* Farm Sidebar Button Status Dot */
+.farm-sidebar-btn {
+    position: relative;
+}
+
+.farm-status-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.farm-status-dot.idle {
+    background: #666;
+}
+
+.farm-status-dot.active {
+    background: var(--tw-btn-green);
+    animation: pulse-dot 2s infinite;
+}
+
+.farm-status-dot.farming {
+    background: #4CAF50;
+    animation: pulse-dot 1s infinite;
+}
+
+.farm-status-dot.paused {
+    background: var(--status-warning);
+}
+
+.farm-status-dot.error {
+    background: var(--status-danger);
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(76, 175, 80, 0);
+    }
+}
+
+/* Farm Modal Overlay */
+.farm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Farm Modal Content */
+.farm-modal-content {
+    background: linear-gradient(135deg, #f5e6c8 0%, #e8d5a9 100%);
+    border: 3px solid var(--tw-border-dark);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    min-width: 350px;
+    max-width: 450px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: scale(0.9) translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Modal Header */
+.farm-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 2px solid var(--tw-border-medium);
+    background: linear-gradient(to bottom, rgba(101, 67, 33, 0.1), transparent);
+}
+
+.farm-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--tw-text-dark);
+}
+
+.farm-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 0 8px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.farm-modal-close:hover {
+    color: var(--status-danger);
+}
+
+/* Modal Body */
+.farm-modal-body {
+    padding: var(--spacing-lg);
+}
+
+.farm-modal-section {
+    margin-bottom: var(--spacing-md);
+}
+
+.farm-modal-section label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.farm-modal-section .farm-status-badge {
+    display: inline-block;
+}
+
+.farm-stats-info {
+    font-size: 12px;
+    color: var(--tw-text-dark);
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-sm);
+}
+
+/* Loop settings inputs */
+.farm-input-group input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.farm-input-group input[type="number"]::-webkit-outer-spin-button,
+.farm-input-group input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.farm-loop-grid .farm-select {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Modal Footer */
+.farm-modal-footer {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-top: 2px solid var(--tw-border-medium);
+    background: linear-gradient(to top, rgba(101, 67, 33, 0.1), transparent);
+}
+
+.farm-modal-footer .btn-farm-start,
+.farm-modal-footer .btn-farm-stop,
+.farm-modal-footer .btn-farm-save,
+.farm-modal-footer .btn-farm-now {
+    padding: 8px 16px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    color: white;
+}
+
+.btn-farm-save {
+    background: linear-gradient(to bottom, #666, #444) !important;
+    border: 1px solid #333 !important;
+}
+
+.btn-farm-save:hover {
+    background: linear-gradient(to bottom, #777, #555) !important;
+    transform: translateY(-1px);
+}
+
+.btn-farm-now {
+    background: linear-gradient(to bottom, #5d7e1e, #4a6418) !important;
+    border: 1px solid #3d5a0f !important;
+}
+
+.btn-farm-now:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #6d8e2e, #5a7428) !important;
+    transform: translateY(-1px);
+}
+
+.btn-farm-now:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ================================================
+   PROFESSIONAL MODAL CARD LAYOUT
+   ================================================ */
+
+/* Status Card */
+.farm-status-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 240, 230, 0.9) 100%);
+    border: 1px solid var(--tw-border-medium);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.farm-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+}
+
+.farm-status-row:not(:last-child) {
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.farm-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.farm-next-run-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--tw-btn-green);
+    font-family: 'Courier New', monospace;
+}
+
+/* Progress Section */
+.farm-progress-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+/* Settings Card */
+.farm-settings-card {
+    background: linear-gradient(135deg, rgba(93, 126, 30, 0.08) 0%, rgba(61, 90, 15, 0.12) 100%);
+    border: 1px solid var(--tw-btn-green-border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.farm-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(93, 126, 30, 0.3);
+}
+
+.farm-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.farm-setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.farm-setting-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.farm-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--tw-border-medium);
+    border-radius: var(--radius-sm);
+    padding: 0 10px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.farm-input-wrapper:focus-within {
+    border-color: var(--tw-btn-green);
+    box-shadow: 0 0 0 2px rgba(93, 126, 30, 0.2);
+}
+
+.farm-input {
+    width: 50px;
+    padding: 8px 0;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--tw-text-dark);
+    -moz-appearance: textfield;
+}
+
+.farm-input:focus {
+    outline: none;
+}
+
+.farm-input::-webkit-outer-spin-button,
+.farm-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.farm-input-prefix,
+.farm-input-suffix {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+}
+
+/* Inline Save Button */
+.btn-farm-save-inline {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    margin-top: 4px;
+    background: linear-gradient(to bottom, #666, #4a4a4a);
+    border: 1px solid #333;
+    border-radius: var(--radius-sm);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-farm-save-inline:hover {
+    background: linear-gradient(to bottom, #777, #555);
+    transform: translateY(-1px);
+}
+
+.btn-farm-save-inline:active {
+    transform: translateY(0);
+}
+
+/* Stats Card */
+.farm-stats-card {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px dashed var(--tw-border-light);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+}
+
+.farm-stats-card .farm-stats-info {
+    background: none;
+    padding: 0;
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+}
+
+/* Action Buttons in Footer */
+.btn-farm-action {
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+    border: none;
+}
+
+.btn-farm-action:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-farm-action:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Farm Now Button */
+.btn-farm-action.btn-farm-now {
+    background: linear-gradient(to bottom, #5d7e1e, #4a6418);
+    border: 1px solid #3d5a0f;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.btn-farm-action.btn-farm-now:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #6d8e2e, #5a7428);
+}
+
+.btn-farm-action.btn-farm-now:disabled,
+.btn-farm-action.btn-farm-now.farming {
+    background: linear-gradient(to bottom, #888, #666);
+    border-color: #555;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Loop Start Button */
+.btn-farm-action.btn-farm-loop-start {
+    background: linear-gradient(to bottom, #2196F3, #1976D2);
+    border: 1px solid #1565C0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.btn-farm-action.btn-farm-loop-start:hover {
+    background: linear-gradient(to bottom, #42A5F5, #2196F3);
+}
+
+/* Loop Stop Button */
+.btn-farm-action.btn-farm-loop-stop {
+    background: linear-gradient(to bottom, #f44336, #d32f2f);
+    border: 1px solid #c62828;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.btn-farm-action.btn-farm-loop-stop:hover {
+    background: linear-gradient(to bottom, #ef5350, #f44336);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .farm-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .farm-button-group {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .farm-modal-content {
+        min-width: 90%;
+        margin: 0 16px;
+    }
+}

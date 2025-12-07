@@ -426,6 +426,44 @@
   - Deployed to Linode server
   - **USER CONFIRMED**: Navigation working perfectly!
 
+- [2025-12-07] Dashboard Feature Navigation & Debug Tab (v1.4.0) ✅
+  - **USER REQUEST**: New dashboard layout with feature navigation boxes at top
+  - **IMPLEMENTED**:
+    - **Feature Navigation Bar**: Horizontal row of clickable boxes below header
+      - "Fiókok" (first box) - shows accounts grid + alerts
+      - 8 empty placeholder boxes for future features
+      - "Debug" (last box) - shows real-time debug log viewer
+    - **Main Panel Redesign**:
+      - Border around entire panel with TW parchment theme
+      - Header with title, connection status, account count
+      - Feature content sections (show/hide based on selected box)
+    - **Debug Tab Component** (new):
+      - Real-time debug log viewer for all connected accounts
+      - Filter by account (dropdown)
+      - Filter by log type (farmDebug, farmProgress, farmComplete, farmError, botProtection, etc.)
+      - Auto-scroll toggle
+      - Clear/Refresh buttons
+      - Color-coded log types
+      - Dark terminal-style background
+    - **Debug Log API** (new):
+      - GET /api/debug/logs - Fetch recent logs
+      - DELETE /api/debug/logs - Clear all logs
+      - Server-side log storage (last 1000 entries)
+  - **Files Created**:
+    - `server/public/js/components/DebugTab.js` - Debug tab component
+    - `server/public/css/debug.css` - Debug tab styling
+    - `server/services/debugLog.js` - Server-side log storage
+    - `server/routes/debug.js` - Debug API endpoints
+  - **Files Modified**:
+    - `server/public/index.html` - New feature nav structure
+    - `server/public/css/components.css` - Feature nav styling
+    - `server/public/js/app.js` - Feature navigation logic + debug tab init
+    - `server/websocket.js` - Debug message handling + broadcast
+    - `server/index.js` - Debug routes registration
+  - Updated to version 1.4.0
+  - Deployed to Linode server
+  - **USER CONFIRMED**: Feature navigation working!
+
 ## Current State
 Phase 2, 3, 4 & 5 - Account Display + Modals + Templates + Alerts/Logs/Settings (COMPLETE AND DEPLOYED)
 - **Linode Server**: 172.236.201.97 (DEPLOYED AND RUNNING)
@@ -435,7 +473,8 @@ Phase 2, 3, 4 & 5 - Account Display + Modals + Templates + Alerts/Logs/Settings 
   - Local: d:\TW\Multy\server
   - Linode: /root/tw-controller (172.236.201.97)
   - **ANY EDIT must be applied to BOTH locations**
-- **Userscript**: userscript/tw-agent.user.js (version 1.3.0)
+- **Userscript**: userscript/tw-agent.user.js (version 1.5.5 - Farm Bot)
+- **Dashboard**: v1.4.0 - Feature Navigation & Debug Tab
 - **Current config**: wss://172.236.201.97:3000/ws
 - **Connected Accounts**: 3 (hu97_norbitheking, hu97_kupido98, hu97_error404)
 - **Architecture**: 3 VPS servers with 10 Chrome profiles each -> Linode server (single deployment)

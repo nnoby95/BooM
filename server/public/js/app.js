@@ -18,6 +18,7 @@ let accountCards = new Map(); // Map of accountId -> AccountCard instance
 let alertsTab = null;
 let logsTab = null;
 let settingsTab = null;
+let debugTab = null;
 
 // Initialize dashboard
 async function init() {
@@ -30,13 +31,18 @@ async function init() {
   alertsTab = new AlertsTab('#alerts-tab-container');
   logsTab = new LogsTab('#logs-tab-container');
   settingsTab = new SettingsTab('#settings-tab-container');
+  debugTab = new DebugTab('#debug-tab-container');
 
   // Initial render of tabs
   alertsTab.render();
   logsTab.render();
   settingsTab.render();
+  debugTab.init();
 
-  // Setup tab switching
+  // Setup feature navigation
+  setupFeatureNav();
+
+  // Setup tab switching (legacy)
   setupTabs();
 
   // Setup command buttons
@@ -69,43 +75,68 @@ async function init() {
   window.alertsTab = alertsTab;
   window.logsTab = logsTab;
   window.settingsTab = settingsTab;
+  window.debugTab = debugTab;
   window.accounts = accounts;
   window.addLog = addLog;
 }
 
 /**
  * Setup tab switching
+ * Note: Tab navigation has been removed - functionality is in DetailPanel
  */
 function setupTabs() {
-  const tabButtons = document.querySelectorAll('.tab-button');
-  const tabContents = document.querySelectorAll('.tab-content');
-
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const tabId = button.dataset.tab;
-
-      // Remove active class from all tabs and contents
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      tabContents.forEach(content => content.classList.remove('active'));
-
-      // Add active class to clicked tab and corresponding content
-      button.classList.add('active');
-      document.getElementById(`tab-${tabId}`).classList.add('active');
-    });
-  });
+  // Tab navigation has been removed from main dashboard
+  // Account-specific operations are now in the DetailPanel sidebar
 }
 
 /**
  * Setup command button event listeners
+ * Note: Many buttons removed from main dashboard - functionality is in DetailPanel
  */
 function setupCommandButtons() {
-  document.getElementById('btn-send-troops').addEventListener('click', sendTroops);
-  document.getElementById('btn-build').addEventListener('click', buildBuilding);
-  document.getElementById('btn-recruit').addEventListener('click', recruitTroops);
-  document.getElementById('btn-bulk-attack').addEventListener('click', bulkAttack);
-  document.getElementById('btn-bulk-build-template').addEventListener('click', bulkBuildTemplate);
-  document.getElementById('btn-bulk-recruit-template').addEventListener('click', bulkRecruitTemplate);
-  document.getElementById('btn-clear-queue').addEventListener('click', clearQueue);
+  // These buttons have been removed from main dashboard
+  // Functionality is now in DetailPanel sidebar
+}
+
+/**
+ * Setup feature navigation bar
+ * Handles clicking feature boxes and switching content
+ */
+function setupFeatureNav() {
+  const featureBoxes = document.querySelectorAll('.feature-box');
+  const featureContents = document.querySelectorAll('.feature-content');
+
+  featureBoxes.forEach(box => {
+    box.addEventListener('click', () => {
+      // Skip disabled boxes
+      if (box.classList.contains('disabled')) {
+        return;
+      }
+
+      const featureId = box.dataset.feature;
+
+      // Update active state on boxes
+      featureBoxes.forEach(b => b.classList.remove('active'));
+      box.classList.add('active');
+
+      // Show corresponding content
+      featureContents.forEach(content => {
+        content.classList.remove('active');
+      });
+
+      // Find and show the target content
+      const targetContent = document.getElementById(`feature-${featureId}`);
+      if (targetContent) {
+        targetContent.classList.add('active');
+      } else {
+        // Show placeholder for future features
+        const placeholder = document.getElementById('feature-placeholder');
+        if (placeholder) {
+          placeholder.classList.add('active');
+        }
+      }
+    });
+  });
 }
 
 /**
@@ -296,30 +327,11 @@ function renderAlerts() {
 
 /**
  * Render queue status
+ * Note: Queue UI elements have been removed from main dashboard
  */
 function renderQueueStatus() {
-  document.getElementById('queue-length').textContent = queueStatus.queueLength || 0;
-  document.getElementById('queue-processing').textContent = queueStatus.isProcessing ? '⏳ Feldolgozás...' : '✓ Tétlen';
-  document.getElementById('queue-status').textContent = `Várólista: ${queueStatus.queueLength || 0}`;
-
-  const queueList = document.getElementById('queue-list');
-
-  if (!queueStatus.queue || queueStatus.queue.length === 0) {
-    queueList.innerHTML = '<p class="no-data">Nincs parancs a várólistán</p>';
-    return;
-  }
-
-  queueList.innerHTML = queueStatus.queue.map((item, index) => {
-    const cooldown = Math.round(item.waitingFor / 1000);
-    return `
-      <div class="queue-item">
-        <span class="queue-position">#${index + 1}</span>
-        <span class="queue-account">${item.accountId}</span>
-        <span class="queue-command">${getCommandLabel(item.commandType)}</span>
-        <span class="queue-wait">${cooldown > 0 ? `Várakozás: ${cooldown}mp` : 'Készen áll'}</span>
-      </div>
-    `;
-  }).join('');
+  // Queue display has been removed from main dashboard
+  // This function is kept for potential future use
 }
 
 /**
@@ -723,6 +735,19 @@ function handleDashboardMessage(message) {
       default:
         console.log('[Dashboard] Unknown event type:', eventType);
         break;
+    }
+  }
+
+  // Handle debug log messages
+  if (['farmDebug', 'farmProgress', 'farmComplete', 'farmError', 'botProtection'].includes(message.type)) {
+    if (debugTab) {
+      debugTab.addLog({
+        accountId: message.accountId,
+        type: message.type,
+        message: message.message,
+        data: message.data || {},
+        timestamp: message.timestamp || Date.now()
+      });
     }
   }
 }
