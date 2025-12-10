@@ -148,17 +148,20 @@ class DetailPanel extends Component {
       body.appendChild(this.createResourcesSection(account.data.resources));
     }
 
+    // Buildings (always show section, use buildingDetails if available from Building Tab)
+    body.appendChild(this.createBuildingsSection(
+      account.data.buildings || {},
+      account.data.buildQueue,
+      account.data.buildingDetails || null,
+      account.accountId
+    ));
+
     // Troops (always show section, even if empty)
-    body.appendChild(this.createTroopsSection(account.data.troops || {}));
+    body.appendChild(this.createTroopsSection(account.data.troops || {}, account.data.troopDetails || null));
 
     // Effects/Bonuses
     if (account.data.effects && account.data.effects.length > 0) {
       body.appendChild(this.createEffectsSection(account.data.effects));
-    }
-
-    // Buildings
-    if (account.data.buildings) {
-      body.appendChild(this.createBuildingsSection(account.data.buildings, account.data.buildQueue));
     }
 
     // Recruitment
@@ -319,15 +322,42 @@ class DetailPanel extends Component {
   }
 
   /**
-   * Create troops section
+   * Create troops section with collapsible sub-sections
+   * If troopDetails available (from Troops Tab), shows detailed breakdown
    */
-  createTroopsSection(troops) {
-    const section = this.createElement('div', { className: 'detail-section' });
+  createTroopsSection(troops, troopDetails) {
+    const section = this.createElement('div', { className: 'detail-section troops-section' });
 
-    const title = this.createElement('div', {
-      className: 'detail-section-title'
-    }, 'Csapatok');
-    section.appendChild(title);
+    // Collapsible header with barracks icon
+    const header = this.createElement('div', {
+      className: 'section-header-collapsible'
+    });
+
+    const toggle = this.createElement('span', { className: 'section-toggle' }, '▼');
+    header.appendChild(toggle);
+
+    // Barracks icon
+    const barracksIcon = this.createElement('img', {
+      className: 'collapsible-header-icon',
+      src: 'https://dshu.innogamescdn.com/asset/ae6c0149/graphic/buildings/barracks.png',
+      alt: 'Csapatok'
+    });
+    header.appendChild(barracksIcon);
+
+    const titleEl = this.createElement('span', { className: 'section-header-title' }, 'Csapatok');
+    header.appendChild(titleEl);
+
+    // Click handler for collapsing
+    header.addEventListener('click', () => {
+      header.classList.toggle('collapsed');
+      content.classList.toggle('collapsed');
+      toggle.textContent = header.classList.contains('collapsed') ? '▶' : '▼';
+    });
+
+    section.appendChild(header);
+
+    // Content wrapper (collapsible)
+    const content = this.createElement('div', { className: 'section-content' });
 
     const troopTypes = ['spear', 'sword', 'axe', 'archer', 'spy', 'light', 'marcher', 'heavy', 'ram', 'catapult', 'knight', 'snob'];
     const troopNames = {
@@ -345,24 +375,535 @@ class DetailPanel extends Component {
       snob: 'Nemes'
     };
 
-    const grid = this.createElement('div', { className: 'troops-grid' });
+    // If we have detailed troop data from Troops Tab
+    if (troopDetails && troopDetails.troops && Object.keys(troopDetails.troops).length > 0) {
+      // Calculate totals
+      let totalHome = 0;
+      let totalAll = 0;
+      troopTypes.forEach(type => {
+        const t = troopDetails.troops[type];
+        if (t) {
+          totalHome += t.inVillage || 0;
+          totalAll += t.total || 0;
+        }
+      });
 
+      // Total section (simple, not collapsible)
+      content.appendChild(this.createSimpleTroopSection(
+        'Összesen',
+        `${this.formatNumber(totalAll)} egység`,
+        troopTypes,
+        troopNames,
+        (type) => troopDetails.troops[type]?.total || 0
+      ));
+
+      // In Village section (simple, not collapsible)
+      content.appendChild(this.createSimpleTroopSection(
+        'A faluban',
+        `${this.formatNumber(totalHome)} egység`,
+        troopTypes,
+        troopNames,
+        (type) => troopDetails.troops[type]?.inVillage || 0
+      ));
+
+      // Queue section (simple, not collapsible)
+      const queue = troopDetails.queue || { barracks: [], stable: [], garage: [] };
+      const queueCount = (queue.barracks?.length || 0) + (queue.stable?.length || 0) + (queue.garage?.length || 0);
+      if (queueCount > 0) {
+        content.appendChild(this.createSimpleQueueSection(queue, troopNames));
+      }
+
+      // Can Recruit section (simple with inputs, not collapsible)
+      const canRecruit = troopDetails.canRecruit || {};
+      const canRecruitCount = Object.values(canRecruit).reduce((sum, v) => sum + (v || 0), 0);
+      if (canRecruitCount > 0) {
+        content.appendChild(this.createSimpleRecruitSection(canRecruit, troopTypes, troopNames));
+      }
+
+      // Last update indicator
+      if (troopDetails.lastUpdate) {
+        const updateEl = this.createElement('div', {
+          className: 'troop-update-time'
+        }, `Frissítve: ${this.formatTime(troopDetails.lastUpdate)}`);
+        content.appendChild(updateEl);
+      }
+    } else {
+      // Fallback: simple troops display (from regular reports)
+      const grid = this.createElement('div', { className: 'troops-grid' });
+
+      troopTypes.forEach(type => {
+        const count = troops[type] || 0;
+        const item = this.createTroopItem(type, troopNames[type], count);
+        grid.appendChild(item);
+      });
+
+      content.appendChild(grid);
+
+      // Total
+      const total = troopTypes.reduce((sum, type) => sum + (troops[type] || 0), 0);
+      const totalEl = this.createElement('div', {
+        className: 'troop-total'
+      }, `Összesen: ${this.formatNumber(total)} egység`);
+      content.appendChild(totalEl);
+    }
+
+    // Append content wrapper to section
+    section.appendChild(content);
+
+    return section;
+  }
+
+  /**
+   * Create simple troop sub-section (non-collapsible)
+   */
+  createSimpleTroopSection(title, subtitle, troopTypes, troopNames, getCount) {
+    const wrapper = this.createElement('div', { className: 'simple-troop-section' });
+
+    // Header
+    const header = this.createElement('div', { className: 'simple-section-header' });
+
+    const titleEl = this.createElement('span', { className: 'simple-section-title' }, title);
+    header.appendChild(titleEl);
+
+    const subtitleEl = this.createElement('span', { className: 'simple-section-subtitle' }, subtitle);
+    header.appendChild(subtitleEl);
+
+    wrapper.appendChild(header);
+
+    // Content (grid)
+    const grid = this.createElement('div', { className: 'troops-grid compact' });
     troopTypes.forEach(type => {
-      const count = troops[type] || 0;
-      const item = this.createTroopItem(type, troopNames[type], count);
+      const count = getCount(type);
+      if (count > 0) {
+        const item = this.createTroopItem(type, troopNames[type], count);
+        grid.appendChild(item);
+      }
+    });
+    wrapper.appendChild(grid);
+
+    return wrapper;
+  }
+
+  /**
+   * Create simple queue section (non-collapsible)
+   */
+  createSimpleQueueSection(queue, troopNames) {
+    const wrapper = this.createElement('div', { className: 'simple-troop-section' });
+
+    // Aggregate all queue items by unit type
+    const unitTotals = {};
+    let grandTotal = 0;
+
+    ['barracks', 'stable', 'garage'].forEach(building => {
+      const items = queue[building] || [];
+      items.forEach(item => {
+        const unit = item.unit;
+        const count = item.count || 0;
+        if (!unitTotals[unit]) {
+          unitTotals[unit] = 0;
+        }
+        unitTotals[unit] += count;
+        grandTotal += count;
+      });
+    });
+
+    // Header
+    const header = this.createElement('div', { className: 'simple-section-header' });
+
+    const titleEl = this.createElement('span', { className: 'simple-section-title' }, 'Kiképzés alatt');
+    header.appendChild(titleEl);
+
+    const subtitleEl = this.createElement('span', { className: 'simple-section-subtitle' }, `${this.formatNumber(grandTotal)} egység`);
+    header.appendChild(subtitleEl);
+
+    wrapper.appendChild(header);
+
+    // Content - show aggregated totals by unit type
+    const grid = this.createElement('div', { className: 'troops-grid compact' });
+
+    // Sort units by count (highest first)
+    const sortedUnits = Object.entries(unitTotals)
+      .filter(([unit, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1]);
+
+    sortedUnits.forEach(([unit, count]) => {
+      const item = this.createTroopItem(unit, troopNames[unit] || unit, count);
       grid.appendChild(item);
     });
 
-    section.appendChild(grid);
+    wrapper.appendChild(grid);
+    return wrapper;
+  }
 
-    // Total
-    const total = troopTypes.reduce((sum, type) => sum + (troops[type] || 0), 0);
-    const totalEl = this.createElement('div', {
-      style: { marginTop: '8px', fontSize: '11px', fontWeight: 'bold' }
-    }, `Összesen: ${this.formatNumber(total)} egység`);
-    section.appendChild(totalEl);
+  /**
+   * Create simple recruit section with input fields (non-collapsible)
+   */
+  createSimpleRecruitSection(canRecruit, troopTypes, troopNames) {
+    const wrapper = this.createElement('div', { className: 'simple-troop-section' });
 
-    return section;
+    const totalRecruitable = Object.values(canRecruit).reduce((sum, v) => sum + (v || 0), 0);
+
+    // Header
+    const header = this.createElement('div', { className: 'simple-section-header' });
+
+    const titleEl = this.createElement('span', { className: 'simple-section-title' }, 'Kiképezhető');
+    header.appendChild(titleEl);
+
+    const subtitleEl = this.createElement('span', { className: 'simple-section-subtitle' }, `${this.formatNumber(totalRecruitable)} egység`);
+    header.appendChild(subtitleEl);
+
+    wrapper.appendChild(header);
+
+    // Recruit inputs container
+    const recruitGrid = this.createElement('div', { className: 'recruit-grid' });
+
+    // Store input refs for the recruit button
+    const inputRefs = {};
+
+    troopTypes.forEach(type => {
+      const max = canRecruit[type] || 0;
+      if (max > 0) {
+        const row = this.createElement('div', { className: 'recruit-row' });
+
+        // Unit icon
+        const icon = this.createElement('img', {
+          className: 'unit-icon-small',
+          src: this.getUnitIcon(type),
+          alt: troopNames[type] || type
+        });
+        row.appendChild(icon);
+
+        // Unit name
+        const nameEl = this.createElement('span', { className: 'recruit-name' }, troopNames[type] || type);
+        row.appendChild(nameEl);
+
+        // Input field
+        const input = this.createElement('input', {
+          className: 'recruit-input',
+          type: 'number',
+          min: 0,
+          max: max,
+          value: 0,
+          placeholder: '0'
+        });
+        inputRefs[type] = input;
+        row.appendChild(input);
+
+        // Max button
+        const maxBtn = this.createElement('button', {
+          className: 'recruit-max-btn',
+          title: `Max: ${max}`,
+          onClick: (e) => {
+            e.stopPropagation();
+            input.value = max;
+          }
+        }, `(${this.formatNumber(max)})`);
+        row.appendChild(maxBtn);
+
+        recruitGrid.appendChild(row);
+      }
+    });
+
+    wrapper.appendChild(recruitGrid);
+
+    // Recruit button
+    const recruitBtn = this.createElement('button', {
+      className: 'recruit-submit-btn',
+      onClick: (e) => {
+        e.stopPropagation();
+        this.handleRecruitClick(inputRefs);
+      }
+    }, 'Toborzás indítása');
+    wrapper.appendChild(recruitBtn);
+
+    return wrapper;
+  }
+
+  /**
+   * Create collapsible troop sub-section (legacy - kept for compatibility)
+   */
+  createCollapsibleTroopSection(title, subtitle, troopTypes, troopNames, getCount, expanded = false) {
+    const wrapper = this.createElement('div', { className: 'collapsible-section' });
+
+    // Header (clickable)
+    const header = this.createElement('div', {
+      className: `collapsible-header ${expanded ? 'expanded' : ''}`,
+      onClick: () => {
+        header.classList.toggle('expanded');
+        content.classList.toggle('collapsed');
+      }
+    });
+
+    const toggle = this.createElement('span', { className: 'collapsible-toggle' }, expanded ? '▼' : '▶');
+    header.appendChild(toggle);
+
+    const titleEl = this.createElement('span', { className: 'collapsible-title' }, title);
+    header.appendChild(titleEl);
+
+    const subtitleEl = this.createElement('span', { className: 'collapsible-subtitle' }, subtitle);
+    header.appendChild(subtitleEl);
+
+    wrapper.appendChild(header);
+
+    // Content (grid)
+    const content = this.createElement('div', {
+      className: `collapsible-content ${expanded ? '' : 'collapsed'}`
+    });
+
+    const grid = this.createElement('div', { className: 'troops-grid compact' });
+    troopTypes.forEach(type => {
+      const count = getCount(type);
+      if (count > 0) {
+        const item = this.createTroopItem(type, troopNames[type], count);
+        grid.appendChild(item);
+      }
+    });
+    content.appendChild(grid);
+
+    wrapper.appendChild(content);
+
+    // Update toggle icon on click
+    header.addEventListener('click', () => {
+      toggle.textContent = header.classList.contains('expanded') ? '▼' : '▶';
+    });
+
+    return wrapper;
+  }
+
+  /**
+   * Create collapsible queue section with aggregated unit totals
+   */
+  createCollapsibleQueueSection(queue, troopNames) {
+    const wrapper = this.createElement('div', { className: 'collapsible-section' });
+
+    // Aggregate all queue items by unit type (across all buildings)
+    const unitTotals = {};
+    let grandTotal = 0;
+
+    ['barracks', 'stable', 'garage'].forEach(building => {
+      const items = queue[building] || [];
+      items.forEach(item => {
+        const unit = item.unit;
+        const count = item.count || 0;
+        if (!unitTotals[unit]) {
+          unitTotals[unit] = 0;
+        }
+        unitTotals[unit] += count;
+        grandTotal += count;
+      });
+    });
+
+    // Header
+    const header = this.createElement('div', {
+      className: 'collapsible-header',
+      onClick: () => {
+        header.classList.toggle('expanded');
+        content.classList.toggle('collapsed');
+        toggle.textContent = header.classList.contains('expanded') ? '▼' : '▶';
+      }
+    });
+
+    const toggle = this.createElement('span', { className: 'collapsible-toggle' }, '▶');
+    header.appendChild(toggle);
+
+    const titleEl = this.createElement('span', { className: 'collapsible-title' }, 'Kiképzés alatt');
+    header.appendChild(titleEl);
+
+    const subtitleEl = this.createElement('span', { className: 'collapsible-subtitle' }, `${this.formatNumber(grandTotal)} egység`);
+    header.appendChild(subtitleEl);
+
+    wrapper.appendChild(header);
+
+    // Content - show aggregated totals by unit type
+    const content = this.createElement('div', { className: 'collapsible-content collapsed' });
+
+    const grid = this.createElement('div', { className: 'troops-grid compact' });
+
+    // Sort units by count (highest first)
+    const sortedUnits = Object.entries(unitTotals)
+      .filter(([unit, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1]);
+
+    sortedUnits.forEach(([unit, count]) => {
+      const item = this.createTroopItem(unit, troopNames[unit] || unit, count);
+      grid.appendChild(item);
+    });
+
+    content.appendChild(grid);
+    wrapper.appendChild(content);
+    return wrapper;
+  }
+
+  /**
+   * Create recruit section with input fields
+   */
+  createRecruitSection(canRecruit, troopTypes, troopNames) {
+    const wrapper = this.createElement('div', { className: 'collapsible-section' });
+
+    const totalRecruitable = Object.values(canRecruit).reduce((sum, v) => sum + (v || 0), 0);
+
+    // Header
+    const header = this.createElement('div', {
+      className: 'collapsible-header',
+      onClick: () => {
+        header.classList.toggle('expanded');
+        content.classList.toggle('collapsed');
+        toggle.textContent = header.classList.contains('expanded') ? '▼' : '▶';
+      }
+    });
+
+    const toggle = this.createElement('span', { className: 'collapsible-toggle' }, '▶');
+    header.appendChild(toggle);
+
+    const titleEl = this.createElement('span', { className: 'collapsible-title' }, 'Kiképezhető');
+    header.appendChild(titleEl);
+
+    const subtitleEl = this.createElement('span', { className: 'collapsible-subtitle' }, `${this.formatNumber(totalRecruitable)} egység`);
+    header.appendChild(subtitleEl);
+
+    wrapper.appendChild(header);
+
+    // Content
+    const content = this.createElement('div', { className: 'collapsible-content collapsed' });
+
+    // Recruit inputs container
+    const recruitGrid = this.createElement('div', { className: 'recruit-grid' });
+
+    // Store input refs for the recruit button
+    const inputRefs = {};
+
+    troopTypes.forEach(type => {
+      const max = canRecruit[type] || 0;
+      if (max > 0) {
+        const row = this.createElement('div', { className: 'recruit-row' });
+
+        // Unit icon
+        const icon = this.createElement('img', {
+          className: 'unit-icon-small',
+          src: this.getUnitIcon(type),
+          alt: troopNames[type] || type
+        });
+        row.appendChild(icon);
+
+        // Unit name
+        const nameEl = this.createElement('span', { className: 'recruit-name' }, troopNames[type] || type);
+        row.appendChild(nameEl);
+
+        // Input field
+        const input = this.createElement('input', {
+          className: 'recruit-input',
+          type: 'number',
+          min: 0,
+          max: max,
+          value: 0,
+          placeholder: '0'
+        });
+        inputRefs[type] = input;
+        row.appendChild(input);
+
+        // Max button
+        const maxBtn = this.createElement('button', {
+          className: 'recruit-max-btn',
+          title: `Max: ${max}`,
+          onClick: (e) => {
+            e.stopPropagation();
+            input.value = max;
+          }
+        }, `(${this.formatNumber(max)})`);
+        row.appendChild(maxBtn);
+
+        recruitGrid.appendChild(row);
+      }
+    });
+
+    content.appendChild(recruitGrid);
+
+    // Recruit button
+    const recruitBtn = this.createElement('button', {
+      className: 'recruit-submit-btn',
+      onClick: (e) => {
+        e.stopPropagation();
+        this.handleRecruitClick(inputRefs);
+      }
+    }, 'Toborzás indítása');
+    content.appendChild(recruitBtn);
+
+    wrapper.appendChild(content);
+    return wrapper;
+  }
+
+  /**
+   * Handle recruit button click
+   */
+  handleRecruitClick(inputRefs) {
+    const units = {};
+    let hasUnits = false;
+
+    Object.entries(inputRefs).forEach(([type, input]) => {
+      const count = parseInt(input.value) || 0;
+      if (count > 0) {
+        units[type] = count;
+        hasUnits = true;
+      }
+    });
+
+    if (!hasUnits) {
+      console.log('No units selected for recruitment');
+      return;
+    }
+
+    console.log('Recruiting units:', units);
+
+    // Determine building based on unit types
+    // barracks: spear, sword, axe, archer
+    // stable: spy, light, marcher, heavy
+    // garage: ram, catapult
+    const barracksUnits = ['spear', 'sword', 'axe', 'archer'];
+    const stableUnits = ['spy', 'light', 'marcher', 'heavy'];
+    const garageUnits = ['ram', 'catapult'];
+
+    // Group units by building
+    const byBuilding = { barracks: {}, stable: {}, garage: {} };
+    Object.entries(units).forEach(([type, count]) => {
+      if (barracksUnits.includes(type)) byBuilding.barracks[type] = count;
+      else if (stableUnits.includes(type)) byBuilding.stable[type] = count;
+      else if (garageUnits.includes(type)) byBuilding.garage[type] = count;
+    });
+
+    // Send recruit command via WebSocket for each building with units
+    const accountId = this.currentAccount?.accountId;
+    if (!accountId) {
+      console.error('No account selected');
+      return;
+    }
+
+    Object.entries(byBuilding).forEach(([building, buildingUnits]) => {
+      if (Object.keys(buildingUnits).length > 0) {
+        console.log(`Sending recruit command for ${building}:`, buildingUnits);
+        if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+          window.ws.send(JSON.stringify({
+            type: 'recruitTroops',
+            accountId: accountId,
+            building: building,
+            units: buildingUnits,
+            actionId: `recruit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          }));
+        }
+      }
+    });
+
+    // Clear inputs after sending
+    Object.values(inputRefs).forEach(input => {
+      input.value = 0;
+    });
+  }
+
+  /**
+   * Format time from timestamp
+   */
+  formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
   /**
@@ -472,21 +1013,16 @@ class DetailPanel extends Component {
   }
 
   /**
-   * Create buildings section
+   * Create buildings section with row-based layout
+   * Shows: Icon | Name lvl X | Upgrade button (if possible)
    */
-  createBuildingsSection(buildings, buildQueue) {
-    const section = this.createElement('div', { className: 'detail-section' });
+  createBuildingsSection(buildings, buildQueue, buildingDetails, accountId) {
+    const section = this.createElement('div', { className: 'detail-section buildings-section' });
 
-    const title = this.createElement('div', {
-      className: 'detail-section-title'
-    }, 'Épületek');
-    section.appendChild(title);
-
-    const buildingTypes = ['main', 'barracks', 'stable', 'garage', 'smith', 'market', 'place', 'statue',
-      'wood', 'stone', 'iron', 'farm', 'storage', 'hide', 'wall'];
+    // Building names mapping
     const buildingNames = {
-      main: 'Főépület',
-      barracks: 'Kaszárnya',
+      main: 'Főhadiszállás',
+      barracks: 'Barakk',
       stable: 'Istálló',
       garage: 'Műhely',
       snob: 'Akadémia',
@@ -494,46 +1030,267 @@ class DetailPanel extends Component {
       place: 'Gyülekezőhely',
       statue: 'Szobor',
       market: 'Piac',
-      wood: 'Favágó',
-      stone: 'Agyag',
-      iron: 'Vas',
-      farm: 'Farm',
+      wood: 'Fatelep',
+      stone: 'Agyagbánya',
+      iron: 'Vasbánya',
+      farm: 'Tanya',
       storage: 'Raktár',
-      hide: 'Rejtekely',
-      wall: 'Fal'
+      hide: 'Rejtekhely',
+      wall: 'Fal',
+      church: 'Templom',
+      church_f: 'Első templom',
+      watchtower: 'Őrtorony'
     };
 
-    const grid = this.createElement('div', { className: 'buildings-grid' });
-
-    buildingTypes.forEach(type => {
-      const level = buildings[type] || 0;
-      const item = this.createBuildingItem(type, buildingNames[type], level);
-      grid.appendChild(item);
+    // Collapsible header with main building icon
+    const header = this.createElement('div', {
+      className: 'section-header-collapsible'
     });
 
-    section.appendChild(grid);
+    const toggle = this.createElement('span', { className: 'section-toggle' }, '▼');
+    header.appendChild(toggle);
 
-    // Build Queue
-    if (buildQueue && buildQueue.length > 0) {
-      const queueTitle = this.createElement('div', {
-        style: { marginTop: '12px', marginBottom: '8px', fontSize: '11px', fontWeight: 'bold' }
-      }, `📋 Építési sor (${buildQueue.length}/2):`);
-      section.appendChild(queueTitle);
+    // Main building icon
+    const mainIcon = this.createElement('img', {
+      className: 'collapsible-header-icon',
+      src: 'https://dshu.innogamescdn.com/asset/fa5daa46/graphic/buildings/main.png',
+      alt: 'Épületek'
+    });
+    header.appendChild(mainIcon);
 
-      buildQueue.forEach((item, index) => {
-        const queueItem = this.createQueueItem(
-          `${index + 1}. ${buildingNames[item.building]} ${item.currentLevel}→${item.targetLevel}`,
-          item.finishTime
-        );
-        section.appendChild(queueItem);
+    const titleEl = this.createElement('span', { className: 'section-header-title' }, 'Épületek');
+    header.appendChild(titleEl);
+
+    // Content wrapper (collapsible)
+    const content = this.createElement('div', { className: 'section-content' });
+
+    // Click handler for collapsing
+    header.addEventListener('click', () => {
+      header.classList.toggle('collapsed');
+      content.classList.toggle('collapsed');
+      toggle.textContent = header.classList.contains('collapsed') ? '▶' : '▼';
+    });
+
+    section.appendChild(header);
+
+    // Building order
+    const buildingOrder = ['main', 'barracks', 'stable', 'garage', 'smith', 'market', 'place', 'statue',
+      'wood', 'stone', 'iron', 'farm', 'storage', 'hide', 'wall', 'church', 'church_f', 'watchtower', 'snob'];
+
+    // If we have detailed building data from Building Tab
+    if (buildingDetails && buildingDetails.buildings && Object.keys(buildingDetails.buildings).length > 0) {
+      const detailedBuildings = buildingDetails.buildings;
+
+      // Build Queue section FIRST (if any)
+      const queue = buildingDetails.buildQueue || [];
+      const queueSlots = buildingDetails.queueSlots || { used: 0, max: 2 };
+
+      if (queue.length > 0) {
+        const queueSection = this.createElement('div', { className: 'building-queue-section' });
+
+        const queueHeader = this.createElement('div', { className: 'simple-section-header' });
+        const queueTitle = this.createElement('span', { className: 'simple-section-title' }, 'Építési sor');
+        queueHeader.appendChild(queueTitle);
+        const queueSubtitle = this.createElement('span', { className: 'simple-section-subtitle' }, `${queueSlots.used}/${queueSlots.max}`);
+        queueHeader.appendChild(queueSubtitle);
+        queueSection.appendChild(queueHeader);
+
+        queue.forEach((item, index) => {
+          const queueItem = this.createBuildingQueueItem(item, buildingNames, index);
+          queueSection.appendChild(queueItem);
+        });
+
+        content.appendChild(queueSection);
+      }
+
+      // Buildings list - row format
+      const buildingsList = this.createElement('div', { className: 'buildings-list' });
+
+      buildingOrder.forEach(type => {
+        const b = detailedBuildings[type];
+        if (b && b.level > 0) {
+          const row = this.createBuildingRow(type, buildingNames[type] || b.name || type, b, accountId);
+          buildingsList.appendChild(row);
+        }
       });
+
+      content.appendChild(buildingsList);
+
+      // Last update indicator
+      if (buildingDetails.lastUpdate) {
+        const updateEl = this.createElement('div', {
+          className: 'building-update-time'
+        }, `Frissítve: ${this.formatTime(buildingDetails.lastUpdate)}`);
+        content.appendChild(updateEl);
+      }
+    } else {
+      // Fallback: simple buildings display (from regular reports)
+      const buildingsList = this.createElement('div', { className: 'buildings-list' });
+
+      buildingOrder.forEach(type => {
+        const level = buildings[type] || 0;
+        if (level > 0) {
+          const row = this.createSimpleBuildingRow(type, buildingNames[type] || type, level);
+          buildingsList.appendChild(row);
+        }
+      });
+
+      content.appendChild(buildingsList);
+
+      // Build Queue (from basic data)
+      if (buildQueue && buildQueue.length > 0) {
+        const queueSection = this.createElement('div', { className: 'building-queue-section' });
+        const queueTitle = this.createElement('div', {
+          className: 'simple-section-header'
+        });
+        const titleSpan = this.createElement('span', { className: 'simple-section-title' }, 'Építési sor');
+        queueTitle.appendChild(titleSpan);
+        const subtitleSpan = this.createElement('span', { className: 'simple-section-subtitle' }, `${buildQueue.length}/2`);
+        queueTitle.appendChild(subtitleSpan);
+        queueSection.appendChild(queueTitle);
+
+        buildQueue.forEach((item, index) => {
+          const queueItem = this.createQueueItem(
+            `${buildingNames[item.building] || item.building} ${item.currentLevel}→${item.targetLevel}`,
+            item.finishTime
+          );
+          queueSection.appendChild(queueItem);
+        });
+
+        content.appendChild(queueSection);
+      }
     }
 
+    section.appendChild(content);
     return section;
   }
 
   /**
-   * Create building item for grid
+   * Create building row: Icon | Name lvl X | Upgrade button
+   */
+  createBuildingRow(type, name, building, accountId) {
+    const row = this.createElement('div', { className: 'building-row' });
+
+    // Icon
+    const icon = this.createElement('img', {
+      className: 'building-row-icon',
+      src: `https://dshu.innogamescdn.com/asset/fa5daa46/graphic/buildings/${type}.png`,
+      alt: name
+    });
+    row.appendChild(icon);
+
+    // Name and level
+    const info = this.createElement('div', { className: 'building-row-info' });
+    const nameLevel = this.createElement('span', { className: 'building-row-name' },
+      `${name} ${building.level}. szint`);
+    info.appendChild(nameLevel);
+    row.appendChild(info);
+
+    // Upgrade button (if can build and not at max)
+    if (building.canBuild && building.level < building.maxLevel) {
+      const upgradeBtn = this.createElement('button', {
+        className: 'building-upgrade-btn',
+        title: `Fejlesztés ${building.level + 1}. szintre`,
+        onClick: (e) => {
+          e.stopPropagation();
+          this.handleBuildingUpgrade(accountId, type, building.level + 1);
+        }
+      }, `→ ${building.level + 1}`);
+      row.appendChild(upgradeBtn);
+    } else if (building.level >= building.maxLevel) {
+      const maxBadge = this.createElement('span', { className: 'building-max-badge' }, 'MAX');
+      row.appendChild(maxBadge);
+    } else {
+      // Cannot build - show reason or empty
+      const cantBuild = this.createElement('span', { className: 'building-cant-build' }, '-');
+      row.appendChild(cantBuild);
+    }
+
+    return row;
+  }
+
+  /**
+   * Create simple building row (fallback without detailed data)
+   */
+  createSimpleBuildingRow(type, name, level) {
+    const row = this.createElement('div', { className: 'building-row simple' });
+
+    // Icon
+    const icon = this.createElement('img', {
+      className: 'building-row-icon',
+      src: `https://dshu.innogamescdn.com/asset/fa5daa46/graphic/buildings/${type}.png`,
+      alt: name
+    });
+    row.appendChild(icon);
+
+    // Name and level
+    const info = this.createElement('div', { className: 'building-row-info' });
+    const nameLevel = this.createElement('span', { className: 'building-row-name' },
+      `${name} ${level}. szint`);
+    info.appendChild(nameLevel);
+    row.appendChild(info);
+
+    return row;
+  }
+
+  /**
+   * Handle building upgrade click
+   */
+  handleBuildingUpgrade(accountId, building, targetLevel) {
+    console.log(`Upgrading ${building} to level ${targetLevel} for ${accountId}`);
+
+    // Send upgrade command via API
+    fetch('/api/commands/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accountId,
+        building,
+        levels: 1
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        console.log('Build command sent successfully');
+      } else {
+        console.error('Build command failed:', data.error);
+      }
+    })
+    .catch(err => console.error('Failed to send build command:', err));
+  }
+
+  /**
+   * Create detailed building item with TW icon and level
+   */
+  createDetailedBuildingItem(type, name, building) {
+    const item = this.createElement('div', {
+      className: `building-item detailed ${building.canBuild ? 'can-build' : ''}`
+    });
+
+    // Icon from TW CDN
+    const icon = this.createElement('img', {
+      className: 'building-icon',
+      src: `https://dshu.innogamescdn.com/asset/fa5daa46/graphic/buildings/${type}.png`,
+      alt: name,
+      title: name
+    });
+    item.appendChild(icon);
+
+    // Level badge
+    const levelBadge = this.createElement('div', {
+      className: `building-level ${building.level >= building.maxLevel ? 'max' : ''}`
+    }, building.level.toString());
+    item.appendChild(levelBadge);
+
+    // Name tooltip
+    item.title = `${name} (${building.level}/${building.maxLevel})`;
+
+    return item;
+  }
+
+  /**
+   * Create building item for grid (simple version)
    */
   createBuildingItem(type, name, level) {
     const item = this.createElement('div', { className: 'building-item' });
@@ -554,6 +1311,140 @@ class DetailPanel extends Component {
     item.appendChild(nameEl);
 
     return item;
+  }
+
+  /**
+   * Create building queue item with countdown timer
+   */
+  createBuildingQueueItem(item, buildingNames, index) {
+    const row = this.createElement('div', { className: 'building-queue-item' });
+
+    // Building icon
+    const icon = this.createElement('img', {
+      className: 'building-queue-icon',
+      src: `https://dshu.innogamescdn.com/asset/fa5daa46/graphic/buildings/${item.building}.png`,
+      alt: buildingNames[item.building] || item.building
+    });
+    row.appendChild(icon);
+
+    // Building name and level
+    const info = this.createElement('div', { className: 'building-queue-info' });
+    const nameEl = this.createElement('span', { className: 'building-queue-name' },
+      `${buildingNames[item.building] || item.building} ${item.targetLevel}`);
+    info.appendChild(nameEl);
+    row.appendChild(info);
+
+    // Timer
+    const timerEl = this.createElement('span', {
+      className: 'building-queue-timer',
+      'data-finish-time': item.finishTime
+    }, this.formatCountdown(item.finishTime));
+    row.appendChild(timerEl);
+
+    // Start countdown update
+    this.startCountdownTimer(timerEl, item.finishTime);
+
+    return row;
+  }
+
+  /**
+   * Create upgradeable building item showing costs
+   */
+  createUpgradeableItem(type, name, building) {
+    const row = this.createElement('div', { className: 'building-upgrade-item' });
+
+    // Building icon
+    const icon = this.createElement('img', {
+      className: 'building-upgrade-icon',
+      src: `https://dshu.innogamescdn.com/asset/fa5daa46/graphic/buildings/${type}.png`,
+      alt: name
+    });
+    row.appendChild(icon);
+
+    // Building info
+    const info = this.createElement('div', { className: 'building-upgrade-info' });
+
+    const nameEl = this.createElement('span', { className: 'building-upgrade-name' },
+      `${name} ${building.level}→${building.level + 1}`);
+    info.appendChild(nameEl);
+
+    // Costs
+    const costs = this.createElement('div', { className: 'building-upgrade-costs' });
+    if (building.wood) {
+      costs.appendChild(this.createResourceCost('wood', building.wood));
+    }
+    if (building.stone) {
+      costs.appendChild(this.createResourceCost('stone', building.stone));
+    }
+    if (building.iron) {
+      costs.appendChild(this.createResourceCost('iron', building.iron));
+    }
+    info.appendChild(costs);
+
+    row.appendChild(info);
+
+    // Build time
+    const timeEl = this.createElement('span', { className: 'building-upgrade-time' },
+      this.formatDuration(building.buildTime));
+    row.appendChild(timeEl);
+
+    return row;
+  }
+
+  /**
+   * Create resource cost display
+   */
+  createResourceCost(type, amount) {
+    const cost = this.createElement('span', { className: `resource-cost ${type}` });
+
+    const icon = this.createElement('img', {
+      className: 'resource-cost-icon',
+      src: `https://dshu.innogamescdn.com/asset/fa5daa46/graphic/holz.png`.replace('holz', type === 'wood' ? 'holz' : type === 'stone' ? 'lehm' : 'eisen'),
+      alt: type
+    });
+    cost.appendChild(icon);
+
+    const amountEl = this.createElement('span', {}, this.formatNumber(amount));
+    cost.appendChild(amountEl);
+
+    return cost;
+  }
+
+  /**
+   * Format duration in seconds to HH:MM:SS
+   */
+  formatDuration(seconds) {
+    if (!seconds) return '-';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Format countdown timer
+   */
+  formatCountdown(finishTime) {
+    const now = Date.now();
+    const remaining = Math.max(0, finishTime - now);
+    if (remaining === 0) return 'Kész!';
+
+    const seconds = Math.floor(remaining / 1000);
+    return this.formatDuration(seconds);
+  }
+
+  /**
+   * Start countdown timer for an element
+   */
+  startCountdownTimer(element, finishTime) {
+    const updateTimer = () => {
+      const text = this.formatCountdown(finishTime);
+      element.textContent = text;
+      if (text !== 'Kész!') {
+        setTimeout(updateTimer, 1000);
+      }
+    };
+    setTimeout(updateTimer, 1000);
   }
 
   /**
@@ -611,33 +1502,63 @@ class DetailPanel extends Component {
 
   /**
    * Create commands section (incoming/outgoing)
+   * incomings can be: object { attacks, supports } OR array (legacy)
    */
   createCommandsSection(incomings, outgoings) {
-    const section = this.createElement('div', { className: 'detail-section' });
+    const section = this.createElement('div', { className: 'detail-section commands-section' });
 
     const title = this.createElement('div', {
       className: 'detail-section-title'
     }, 'Bejövő/Kimenő');
     section.appendChild(title);
 
-    // Incoming attacks
-    if (incomings && incomings.length > 0) {
-      const attacksTitle = this.createElement('div', {
-        style: { marginBottom: '4px', fontSize: '11px', fontWeight: 'bold', color: 'var(--alert-critical)' }
-      }, `⚔️ BEJÖVŐ TÁMADÁSOK (${incomings.length}):`);
-      section.appendChild(attacksTitle);
+    // Handle new format: incomings is object { attacks, supports }
+    const attackCount = incomings?.attacks ?? (Array.isArray(incomings) ? incomings.length : 0);
+    const supportCount = incomings?.supports ?? 0;
 
-      incomings.forEach(incoming => {
-        const item = this.createCommandItem(
-          `⚔️ ${incoming.originCoords} (${incoming.originVillage || 'Ismeretlen'})`,
-          incoming.arrivalTime,
-          'incoming-attack'
-        );
-        section.appendChild(item);
+    // Create incoming attacks display with TW icon
+    const incomingRow = this.createElement('div', { className: 'incoming-attacks-row' });
+
+    // Attack icon from TW
+    const attackIcon = this.createElement('img', {
+      className: 'incoming-attack-icon',
+      src: 'https://dshu.innogamescdn.com/asset/fa5daa46/graphic/unit/att.webp',
+      alt: 'Bejövő támadások'
+    });
+    incomingRow.appendChild(attackIcon);
+
+    // Attack count and label
+    const attackLabel = this.createElement('span', { className: 'incoming-attack-label' }, 'Bejövő támadások:');
+    incomingRow.appendChild(attackLabel);
+
+    const attackCountEl = this.createElement('span', {
+      className: `incoming-attack-count ${attackCount > 0 ? 'has-attacks' : 'no-attacks'}`
+    }, attackCount.toString());
+    incomingRow.appendChild(attackCountEl);
+
+    section.appendChild(incomingRow);
+
+    // Show support count if any
+    if (supportCount > 0) {
+      const supportRow = this.createElement('div', { className: 'incoming-support-row' });
+
+      const supportIcon = this.createElement('img', {
+        className: 'incoming-support-icon',
+        src: 'https://dshu.innogamescdn.com/asset/fa5daa46/graphic/unit/def.webp',
+        alt: 'Bejövő erősítések'
       });
+      supportRow.appendChild(supportIcon);
+
+      const supportLabel = this.createElement('span', { className: 'incoming-support-label' }, 'Bejövő erősítések:');
+      supportRow.appendChild(supportLabel);
+
+      const supportCountEl = this.createElement('span', { className: 'incoming-support-count' }, supportCount.toString());
+      supportRow.appendChild(supportCountEl);
+
+      section.appendChild(supportRow);
     }
 
-    // Outgoing commands
+    // Outgoing commands (legacy array format)
     if (outgoings && outgoings.length > 0) {
       const outgoingTitle = this.createElement('div', {
         style: { marginTop: '12px', marginBottom: '4px', fontSize: '11px', fontWeight: 'bold' }
@@ -652,13 +1573,6 @@ class DetailPanel extends Component {
         );
         section.appendChild(item);
       });
-    }
-
-    if ((!incomings || incomings.length === 0) && (!outgoings || outgoings.length === 0)) {
-      const empty = this.createElement('div', {
-        style: { textAlign: 'center', color: '#999', fontStyle: 'italic', padding: '12px' }
-      }, 'Nincs aktív parancs');
-      section.appendChild(empty);
     }
 
     return section;

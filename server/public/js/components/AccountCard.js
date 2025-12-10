@@ -28,7 +28,10 @@ class AccountCard extends Component {
   render() {
     const account = this.accountData;
     const isConnected = account.status === 'connected';
-    const hasAlert = account.data.incomings && account.data.incomings.length > 0;
+    // Handle both new object format { attacks, supports } and legacy array format
+    const incomings = account.data.incomings;
+    const incomingAttacks = incomings?.attacks ?? (Array.isArray(incomings) ? incomings.length : 0);
+    const hasAlert = incomingAttacks > 0;
 
     // Create card element
     const card = this.createElement('div', {
@@ -52,10 +55,8 @@ class AccountCard extends Component {
       body.appendChild(this.createResourcesSection(account.data.resources));
     }
 
-    // Alerts
-    if (hasAlert) {
-      body.appendChild(this.createAlertBox(account.data.incomings));
-    }
+    // Incoming attacks - always show (with 0 or count)
+    body.appendChild(this.createIncomingAttacksRow(incomingAttacks));
 
     // Building queue
     if (account.data.buildQueue && account.data.buildQueue.length > 0) {
@@ -181,24 +182,30 @@ class AccountCard extends Component {
   }
 
   /**
-   * Create alert box for incoming attacks
+   * Create incoming attacks row with TW attack icon
    */
-  createAlertBox(incomings) {
-    const alertBox = this.createElement('div', { className: 'card-alert-box' });
+  createIncomingAttacksRow(attackCount) {
+    const row = this.createElement('div', { className: 'card-incoming-attacks' });
 
-    const count = incomings.length;
-    const firstIncoming = incomings[0];
-    const timeUntil = this.formatCountdown(firstIncoming.arrivalTime);
+    // Attack icon from TW
+    const icon = this.createElement('img', {
+      className: 'card-attack-icon',
+      src: 'https://dshu.innogamescdn.com/asset/fa5daa46/graphic/unit/att.webp',
+      alt: 'Attack'
+    });
+    row.appendChild(icon);
 
-    const text = this.createElement('span', {}, `⚔️ ${count} bejövő támadás!`);
-    alertBox.appendChild(text);
+    // Label
+    const label = this.createElement('span', { className: 'card-attack-label' }, 'Bejövő:');
+    row.appendChild(label);
 
-    const countdown = this.createElement('span', {
-      className: 'countdown critical'
-    }, timeUntil);
-    alertBox.appendChild(countdown);
+    // Count badge
+    const countBadge = this.createElement('span', {
+      className: `card-attack-count ${attackCount > 0 ? 'has-attacks' : 'no-attacks'}`
+    }, attackCount.toString());
+    row.appendChild(countBadge);
 
-    return alertBox;
+    return row;
   }
 
   /**

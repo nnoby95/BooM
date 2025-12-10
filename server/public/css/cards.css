@@ -540,6 +540,328 @@
     color: #666;
 }
 
+.troop-total {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* Collapsible Sections */
+.collapsible-section {
+    margin-bottom: 8px;
+    border: 1px solid rgba(139, 115, 85, 0.3);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.4);
+    overflow: hidden;
+}
+
+.collapsible-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    background: linear-gradient(180deg, rgba(245, 242, 235, 0.9) 0%, rgba(235, 228, 215, 0.9) 100%);
+    border-bottom: 1px solid rgba(139, 115, 85, 0.2);
+    transition: background 0.15s ease;
+}
+
+.collapsible-header:hover {
+    background: linear-gradient(180deg, rgba(255, 252, 245, 0.95) 0%, rgba(245, 238, 225, 0.95) 100%);
+}
+
+.collapsible-header.expanded {
+    border-bottom-color: rgba(139, 115, 85, 0.3);
+}
+
+.collapsible-toggle {
+    font-size: 10px;
+    color: #8B7355;
+    width: 12px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.collapsible-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #3d3428;
+    flex: 1;
+}
+
+.collapsible-subtitle {
+    font-size: 11px;
+    color: #8B7355;
+    font-weight: 600;
+}
+
+.collapsible-content {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.collapsible-content.collapsed {
+    display: none;
+}
+
+/* Compact troops grid for collapsible sections */
+.troops-grid.compact {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-bottom: 0;
+}
+
+.troops-grid.compact .troop-item {
+    padding: 4px;
+}
+
+.troops-grid.compact .unit-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.troops-grid.compact .troop-count {
+    font-size: 10px;
+}
+
+.troops-grid.compact .troop-name {
+    display: none;
+}
+
+/* Queue section styles */
+.queue-building-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #5d7e1e;
+    margin-bottom: 4px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(93, 126, 30, 0.2);
+}
+
+.queue-building-label:not(:first-child) {
+    margin-top: 8px;
+}
+
+.queue-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    font-size: 11px;
+}
+
+.unit-icon-small {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.queue-info {
+    flex: 1;
+    color: #3d3428;
+}
+
+.queue-timer {
+    color: #8B7355;
+    font-weight: 600;
+    font-family: monospace;
+    font-size: 10px;
+}
+
+/* Troop update time indicator */
+.troop-update-time {
+    margin-top: 8px;
+    font-size: 9px;
+    color: #8B7355;
+    text-align: right;
+    font-style: italic;
+}
+
+/* Main Section Collapsible (for Csapatok section title) */
+.section-header-collapsible {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--tw-border-light);
+    margin-bottom: var(--spacing-sm);
+}
+
+.section-header-collapsible:hover {
+    opacity: 0.8;
+}
+
+.section-toggle {
+    font-size: 10px;
+    color: #8B7355;
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.section-header-collapsible.collapsed .section-toggle {
+    transform: rotate(-90deg);
+}
+
+.section-header-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--tw-text-header);
+    flex: 1;
+}
+
+.section-content {
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+}
+
+.section-content.collapsed {
+    display: none;
+}
+
+/* Building icon in collapsible header */
+.collapsible-header-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Simple Section Styles (non-collapsible sub-sections) */
+.simple-troop-section {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(139, 115, 85, 0.2);
+}
+
+.simple-troop-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.simple-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.simple-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5d4a30;
+}
+
+.simple-section-subtitle {
+    font-size: 11px;
+    color: #8B7355;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+/* Recruit Section Styles */
+.recruit-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.recruit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(139, 115, 85, 0.15);
+}
+
+.recruit-row:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(139, 115, 85, 0.3);
+}
+
+.recruit-name {
+    flex: 1;
+    font-size: 11px;
+    font-weight: 600;
+    color: #3d3428;
+}
+
+.recruit-input {
+    width: 55px;
+    padding: 4px 6px;
+    font-size: 11px;
+    text-align: center;
+    border: 1px solid rgba(139, 115, 85, 0.4);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.9);
+    color: #3d3428;
+    font-family: monospace;
+}
+
+.recruit-input:focus {
+    outline: none;
+    border-color: #5d7e1e;
+    box-shadow: 0 0 0 2px rgba(93, 126, 30, 0.2);
+}
+
+.recruit-input::-webkit-outer-spin-button,
+.recruit-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.recruit-max-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #5d7e1e;
+    background: linear-gradient(180deg, rgba(93, 126, 30, 0.1) 0%, rgba(93, 126, 30, 0.05) 100%);
+    border: 1px solid rgba(93, 126, 30, 0.3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.recruit-max-btn:hover {
+    background: linear-gradient(180deg, rgba(93, 126, 30, 0.2) 0%, rgba(93, 126, 30, 0.1) 100%);
+    border-color: rgba(93, 126, 30, 0.5);
+    color: #4a6518;
+}
+
+/* TW Native Button Style for Recruit */
+.recruit-submit-btn {
+    width: 100%;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #3d3428;
+    background: linear-gradient(to bottom, #f5f0e1 0%, #d4c4a0 50%, #c4b490 100%);
+    border: 1px solid #8b7355;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.recruit-submit-btn:hover {
+    background: linear-gradient(to bottom, #fffae8 0%, #e4d4b0 50%, #d4c4a0 100%);
+    border-color: #6d5a3a;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.recruit-submit-btn:active {
+    background: linear-gradient(to bottom, #c4b490 0%, #b4a480 50%, #a49470 100%);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateY(1px);
+}
+
 /* Buildings Grid */
 .buildings-grid {
     display: grid;
@@ -689,6 +1011,63 @@
 
 .command-item.outgoing {
     border-left-color: var(--status-warning);
+}
+
+/* Incoming Attacks Row in Card */
+.card-incoming-attacks {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin-bottom: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(139, 90, 43, 0.2);
+}
+
+.card-attack-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.card-attack-label {
+    font-size: 11px;
+    color: #5d4a30;
+    font-weight: 600;
+}
+
+.card-attack-count {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 24px;
+    text-align: center;
+    margin-left: auto;
+}
+
+.card-attack-count.no-attacks {
+    background: linear-gradient(to bottom, #2E7D32, #1B5E20);
+    color: #A5D6A7;
+    border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.card-attack-count.has-attacks {
+    background: linear-gradient(to bottom, #C62828, #8E0000);
+    color: #fff;
+    border: 1px solid rgba(198, 40, 40, 0.8);
+    animation: pulse-card-attack 1.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(198, 40, 40, 0.6);
+}
+
+@keyframes pulse-card-attack {
+    0%, 100% {
+        box-shadow: 0 0 8px rgba(198, 40, 40, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 16px rgba(198, 40, 40, 0.9);
+    }
 }
 
 /* Responsive Detail Panel */

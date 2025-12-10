@@ -11,7 +11,10 @@
 d:\TW\Multy\
 ├── CLAUDE.md              ← YOU ARE HERE (auto-read every session)
 ├── DEVLOG.md              ← Chronological development history
+├── HANDOFF.md             ← Complete developer handoff guide (NEW DEVS START HERE)
+├── BUILDING_TAB_DEV.md    ← Building Tab feature development
 ├── FARMBOT_DEV.md         ← Farm Bot feature development
+├── BULK_FARM_PLAN.md      ← Bulk Farm planning
 ├── PROJECT_BRIEF.md       ← Project overview & goals
 ├── QUICKBAR_STATUS_BRIEF.md ← Quickbar feature brief
 └── docs/archive/          ← Old/completed documentation
@@ -22,6 +25,7 @@ d:\TW\Multy\
 |------|--------------|----------------|
 | `CLAUDE.md` | Every session (auto) | Infrastructure changes, new patterns, new issues |
 | `DEVLOG.md` | Check recent work | After completing features/fixes |
+| `HANDOFF.md` | New developer onboarding | Major architecture changes |
 | `{FEATURE}_DEV.md` | Working on that feature | During feature development |
 
 ---
@@ -31,9 +35,10 @@ d:\TW\Multy\
 | Feature | Status | Dev Log | Notes |
 |---------|--------|---------|-------|
 | Farm Bot | **IN PROGRESS** | [FARMBOT_DEV.md](./FARMBOT_DEV.md) | UI in sidebar, modal done, testing needed |
+| Building Tab | **COMPLETE** | [BUILDING_TAB_DEV.md](./BUILDING_TAB_DEV.md) | Scraping, reports, UI, auto-open tabs |
+| Incoming Attacks | **COMPLETE** | - | DOM detection, card/panel display, 3min memory |
 | Dashboard Layout | **COMPLETE** | - | v1.4.0 with feature navigation boxes |
 | Debug Tab | **COMPLETE** | - | Real-time log viewer for all accounts |
-| Templates | **COMPLETE** | - | Building & recruitment templates |
 | Quickbar Status | PLANNED | [QUICKBAR_STATUS_BRIEF.md](./QUICKBAR_STATUS_BRIEF.md) | Not started |
 
 ---
@@ -354,3 +359,23 @@ ssh root@172.236.201.97 "pm2 show tw-controller | grep -E '(script path|cwd)'"
   - Click box → shows that feature's content
   - Main panel has border, TW parchment theme
   - Debug Tab shows all farm logs from all connected accounts with filters
+- **2024-12-10**: **Building Tab Implementation (Phase 1-4)**
+  - Userscript: Building tab detection, `scrapeBuildingPageData()`, building reports
+  - Server: `handleBuildingReport()` in websocket.js
+  - Dashboard: Collapsible buildings section with TW icons, build queue, upgradeable buildings
+  - Auto-open tabs: `handleOpenTab()` command, `/api/commands/open-tab` endpoint
+- **2024-12-10**: **Troop Recruitment Fix**
+  - Added missing `handleRecruitTroops()` in websocket.js (was falling to default case)
+  - Now forwards `recruitTroops` command to userscript properly
+- **2024-12-10**: **Incoming Attacks Detection & Display**
+  - Updated `scrapeIncomings()` in userscript to return `{ attacks, supports, hasIncomingCell }`
+  - Uses `#incomings_amount` and `#supports_amount` DOM elements
+  - Detail Panel: `createCommandsSection()` shows incoming attacks with TW icon
+  - Account Cards: `createIncomingAttacksRow()` shows attack count on every card
+  - Green badge for 0 attacks, red pulsing badge for active attacks
+  - CSS animations in cards.css and components.css
+- **2024-12-10**: **Incoming Attacks Memory System**
+  - Added server-side memory in `accounts.js` to prevent flickering
+  - When DOM temporarily reports 0, server keeps higher value
+  - Memory duration: 3 minutes (180000ms)
+  - Prevents false "0 attacks" during dynamic DOM updates

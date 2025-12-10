@@ -262,6 +262,7 @@ class AccountState {
   /**
    * Update account data from report
    * Only updates fields that have non-null values (preserves existing data)
+   * Special handling for incomings to prevent flickering (memory system)
    */
   updateData(accountId, reportData) {
     const account = this.accounts.get(accountId);
@@ -270,13 +271,66 @@ class AccountState {
       return false;
     }
 
+    const now = Date.now();
+    const INCOMING_MEMORY_DURATION = 180000; // 3 minutes memory for incoming attacks
+
     // Merge data, preserving existing values when new value is null
     for (const [key, value] of Object.entries(reportData)) {
       if (value !== null && value !== undefined) {
-        account.data[key] = value;
+        // Special handling for incomings field to prevent flickering
+        if (key === 'incomings' && value && typeof value === 'object' && 'attacks' in value) {
+          const newAttacks = value.attacks || 0;
+          const currentIncomings = account.data.incomings;
+          const currentAttacks = currentIncomings?.attacks ?? 0;
+
+          // Initialize memory if not exists
+          if (!account.incomingsMemory) {
+            account.incomingsMemory = { attacks: 0, lastHighTime: 0 };
+          }
+
+          // If new count is higher or equal, update immediately and refresh memory
+          if (newAttacks >= currentAttacks) {
+            account.data[key] = value;
+            if (newAttacks > 0) {
+              account.incomingsMemory.attacks = newAttacks;
+              account.incomingsMemory.lastHighTime = now;
+            }
+          } else {
+            // New count is lower - check if memory period has expired
+            const timeSinceHigh = now - account.incomingsMemory.lastHighTime;
+
+            if (timeSinceHigh >= INCOMING_MEMORY_DURATION) {
+              // Memory expired, allow decrease
+              account.data[key] = value;
+              account.incomingsMemory.attacks = newAttacks;
+              if (newAttacks > 0) {
+                account.incomingsMemory.lastHighTime = now;
+              }
+              logger.debug(`Incoming attacks decreased after memory expiry: ${accountId}`, {
+                from: currentAttacks,
+                to: newAttacks,
+                memoryDuration: timeSinceHigh
+              });
+            } else {
+              // Memory still active - keep higher value, but update other fields (supports, etc)
+              account.data[key] = {
+                ...value,
+                attacks: account.incomingsMemory.attacks // Keep memorized attack count
+              };
+              logger.debug(`Incoming attacks preserved by memory: ${accountId}`, {
+                reported: newAttacks,
+                kept: account.incomingsMemory.attacks,
+                timeRemaining: INCOMING_MEMORY_DURATION - timeSinceHigh
+              });
+            }
+          }
+        } else {
+          // Normal field update
+          account.data[key] = value;
+        }
       }
     }
-    account.lastUpdate = Date.now();
+    account.lastUpdate = now;
     account.status = 'connected';
 
     logger.debug(`Account data updated: ${accountId}`);

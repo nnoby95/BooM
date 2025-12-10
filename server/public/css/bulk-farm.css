@@ -797,6 +797,263 @@
 }
 
 /* ============================================
+   REAL-TIME FARM STATUS CARD
+   ============================================ */
+.bulk-farm-status-card .bulk-farm-card-header {
+  background: linear-gradient(180deg, #2196F3 0%, #1976D2 100%);
+  border-bottom-color: #1565C0;
+}
+
+.bulk-farm-status-card .bulk-farm-card-title::before {
+  background: #90CAF9;
+  box-shadow: 0 0 6px rgba(144, 202, 249, 0.6);
+}
+
+/* Live Indicator */
+.bulk-farm-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.15);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.bulk-farm-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #4CAF50;
+  border-radius: 50%;
+  animation: live-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
+}
+
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+/* Summary Row */
+.bulk-farm-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed rgba(139, 115, 85, 0.3);
+}
+
+.bulk-farm-summary-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(245,242,235,0.8) 100%);
+  border: 1px solid rgba(139, 115, 85, 0.25);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.bulk-farm-summary-item.farming {
+  background: linear-gradient(180deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.08) 100%);
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.bulk-farm-summary-item.loop {
+  background: linear-gradient(180deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.08) 100%);
+  border-color: rgba(33, 150, 243, 0.4);
+}
+
+.bulk-farm-summary-item.paused {
+  background: linear-gradient(180deg, rgba(255, 152, 0, 0.15) 0%, rgba(255, 152, 0, 0.08) 100%);
+  border-color: rgba(255, 152, 0, 0.4);
+}
+
+.bulk-farm-summary-item.idle {
+  background: linear-gradient(180deg, rgba(158, 158, 158, 0.15) 0%, rgba(158, 158, 158, 0.08) 100%);
+  border-color: rgba(158, 158, 158, 0.4);
+}
+
+.bulk-farm-summary-icon {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.bulk-farm-summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #3d3428;
+}
+
+.bulk-farm-summary-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8B7355;
+  margin-top: 4px;
+}
+
+/* Real-time Status List */
+.bulk-farm-status-list {
+  max-height: 260px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(139, 115, 85, 0.3);
+  border-radius: 6px;
+}
+
+.bulk-farm-status-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8B7355;
+}
+
+.bulk-farm-status-empty .bulk-farm-idle-icon {
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.bulk-farm-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(139, 115, 85, 0.15);
+  transition: all 0.15s ease;
+}
+
+.bulk-farm-status-row:last-child {
+  border-bottom: none;
+}
+
+.bulk-farm-status-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Status Row States */
+.bulk-farm-status-row.farming {
+  background: linear-gradient(90deg, rgba(76, 175, 80, 0.12) 0%, rgba(76, 175, 80, 0.04) 100%);
+}
+
+.bulk-farm-status-row.farming::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
+}
+
+.bulk-farm-status-row.loop {
+  background: linear-gradient(90deg, rgba(33, 150, 243, 0.08) 0%, rgba(33, 150, 243, 0.02) 100%);
+}
+
+.bulk-farm-status-row.paused {
+  background: linear-gradient(90deg, rgba(255, 152, 0, 0.08) 0%, rgba(255, 152, 0, 0.02) 100%);
+}
+
+.bulk-farm-status-row.idle {
+  opacity: 0.6;
+}
+
+/* Status Row Elements */
+.bulk-farm-status-row .bulk-farm-status-icon {
+  font-size: 16px;
+  width: auto;
+  height: auto;
+  background: none;
+  flex-shrink: 0;
+}
+
+.bulk-farm-status-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3d3428;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.bulk-farm-status-state {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5d7e1e;
+  padding: 3px 10px;
+  background: rgba(93, 126, 30, 0.12);
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bulk-farm-status-row.farming .bulk-farm-status-state {
+  color: #2E7D32;
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.bulk-farm-status-row.loop .bulk-farm-status-state {
+  color: #1565C0;
+  background: rgba(33, 150, 243, 0.15);
+}
+
+.bulk-farm-status-row.paused .bulk-farm-status-state {
+  color: #E65100;
+  background: rgba(255, 152, 0, 0.15);
+}
+
+.bulk-farm-status-row.idle .bulk-farm-status-state {
+  color: #757575;
+  background: rgba(158, 158, 158, 0.15);
+}
+
+.bulk-farm-status-detail {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8B7355;
+  min-width: 70px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.bulk-farm-status-row.farming .bulk-farm-status-detail {
+  color: #2E7D32;
+  font-weight: 700;
+}
+
+.bulk-farm-status-stats {
+  font-size: 10px;
+  font-weight: 600;
+  color: #999;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Loop status in account list */
+.bulk-farm-account-status.loop {
+  background: linear-gradient(180deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+/* ============================================
    RESPONSIVE ADJUSTMENTS
    ============================================ */
 @media (max-width: 900px) {
@@ -815,5 +1072,13 @@
 
   .bulk-farm-actions {
     flex-direction: column;
+  }
+
+  .bulk-farm-summary {
+    flex-wrap: wrap;
+  }
+
+  .bulk-farm-summary-item {
+    min-width: calc(50% - 4px);
   }
 }

@@ -1,6 +1,7 @@
 /**
  * BulkFarmTab Component
  * Professional UI for bulk farming across multiple accounts
+ * Shows real-time farm status for all accounts
  */
 
 class BulkFarmTab extends Component {
@@ -13,9 +14,15 @@ class BulkFarmTab extends Component {
         randomDelayMinutes: 2
       },
       operation: null,
+      farmStatuses: [],        // Real-time farm status for all accounts
+      farmSummary: null,       // Summary stats
       logs: [],
       isLoading: false
     };
+
+    // Polling interval for farm status
+    this.statusPollInterval = null;
+    this.STATUS_POLL_MS = 3000; // Poll every 3 seconds
 
     // Bind methods
     this.handleStartAll = this.handleStartAll.bind(this);
@@ -28,22 +35,100 @@ class BulkFarmTab extends Component {
    */
   async init() {
     await this.loadStatus();
+    await this.loadFarmStatuses();
     await this.loadLogs();
     this.render();
+
+    // Start polling for farm statuses
+    this.startStatusPolling();
   }
 
   /**
-   * Load bulk farm status from API
+   * Start polling for real-time farm statuses
+   */
+  startStatusPolling() {
+    if (this.statusPollInterval) {
+      clearInterval(this.statusPollInterval);
+    }
+    this.statusPollInterval = setInterval(() => {
+      this.loadFarmStatuses();
+    }, this.STATUS_POLL_MS);
+  }
+
+  /**
+   * Stop polling
+   */
+  stopStatusPolling() {
+    if (this.statusPollInterval) {
+      clearInterval(this.statusPollInterval);
+      this.statusPollInterval = null;
+    }
+  }
+
+  /**
+   * Cleanup when component is destroyed
+   */
+  destroy() {
+    this.stopStatusPolling();
+    super.destroy && super.destroy();
+  }
+
+  /**
+   * Load bulk farm operation status from API
    */
   async loadStatus() {
     try {
       const response = await fetch('/api/bulk-farm/status');
       const data = await response.json();
       if (data.hasOperation) {
-        this.setState({ operation: data });
+        this.setState({ operation: data }, false);
+      } else {
+        this.setState({ operation: null }, false);
       }
     } catch (error) {
       console.error('Failed to load bulk farm status:', error);
+    }
+  }
+
+  /**
+   * Load real-time farm statuses for all accounts
+   */
+  async loadFarmStatuses() {
+    try {
+      const response = await fetch('/api/bulk-farm/farm-statuses');
+      const data = await response.json();
+      if (data.success) {
+        const oldStatuses = JSON.stringify(this.state.farmStatuses);
+        const newStatuses = JSON.stringify(data.statuses);
+
+        // Only update if changed (to avoid unnecessary re-renders)
+        if (oldStatuses !== newStatuses) {
+          this.setState({
+            farmStatuses: data.statuses,
+            farmSummary: data.summary
+          }, false);
+          this.updateFarmStatusDisplay();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load farm statuses:', error);
+    }
+  }
+
+  /**
+   * Update just the farm status display (optimized partial render)
+   */
+  updateFarmStatusDisplay() {
+    const container = document.getElementById('bulk-farm-status-list');
+    if (container) {
+      container.innerHTML = '';
+      this.renderStatusItems(container);
+    }
+
+    // Update summary
+    const summaryEl = document.getElementById('bulk-farm-summary');
+    if (summaryEl && this.state.farmSummary) {
+      summaryEl.innerHTML = this.renderSummaryHTML();
     }
   }
 
@@ -55,7 +140,7 @@ class BulkFarmTab extends Component {
       const response = await fetch('/api/bulk-farm/logs?count=100');
       const data = await response.json();
       if (data.success) {
-        this.setState({ logs: data.logs });
+        this.setState({ logs: data.logs }, false);
       }
     } catch (error) {
       console.error('Failed to load bulk farm logs:', error);
@@ -86,19 +171,28 @@ class BulkFarmTab extends Component {
       case 'bulkFarmLog':
         this.handleLog(message);
         break;
+      case 'farmProgress':
+      case 'farmComplete':
+      case 'farmError':
+        // Real-time farm events - refresh status
+        this.loadFarmStatuses();
+        break;
     }
   }
 
   handleProgress(data) {
     this.loadStatus();
+    this.loadFarmStatuses();
   }
 
   handleComplete(data) {
     this.loadStatus();
+    this.loadFarmStatuses();
   }
 
   handleStopped(data) {
     this.loadStatus();
+    this.loadFarmStatuses();
   }
 
   handleLog(log) {
@@ -176,6 +270,7 @@ class BulkFarmTab extends Component {
       if (result.success) {
         console.log('Bulk farm started:', result);
         await this.loadStatus();
+        await this.loadFarmStatuses();
       } else {
         alert('Hiba: ' + result.error);
       }
@@ -204,6 +299,7 @@ class BulkFarmTab extends Component {
       if (result.success) {
         console.log('Bulk farm stopped:', result);
         await this.loadStatus();
+        await this.loadFarmStatuses();
       } else {
         alert('Hiba: ' + result.error);
       }
@@ -235,6 +331,77 @@ class BulkFarmTab extends Component {
   }
 
   /**
+   * Format time remaining until next run
+   */
+  formatTimeRemaining(nextRun) {
+    if (!nextRun) return '-';
+    const now = Date.now();
+    const diff = nextRun - now;
+    if (diff <= 0) return 'most...';
+
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+
+    if (minutes > 0) {
+      return `${minutes}p ${seconds}mp`;
+    }
+    return `${seconds}mp`;
+  }
+
+  /**
+   * Get farm state info for an account
+   */
+  getFarmStateInfo(status) {
+    if (status.isFarming) {
+      const progress = status.currentProgress;
+      if (progress && progress.total > 0) {
+        return {
+          state: 'farming',
+          icon: '🚜',
+          text: 'Farmol',
+          detail: `${progress.current}/${progress.total}`,
+          class: 'farming'
+        };
+      }
+      return {
+        state: 'farming',
+        icon: '🚜',
+        text: 'Farmol',
+        detail: 'Folyamatban...',
+        class: 'farming'
+      };
+    }
+
+    if (status.isPaused) {
+      return {
+        state: 'paused',
+        icon: '⏸️',
+        text: 'Szuneteltetve',
+        detail: status.lastError || '-',
+        class: 'paused'
+      };
+    }
+
+    if (status.isRunning) {
+      return {
+        state: 'loop',
+        icon: '🔄',
+        text: 'Loop aktiv',
+        detail: this.formatTimeRemaining(status.nextRun),
+        class: 'loop'
+      };
+    }
+
+    return {
+      state: 'idle',
+      icon: '⏹️',
+      text: 'Inaktiv',
+      detail: '-',
+      class: 'idle'
+    };
+  }
+
+  /**
    * Render the component
    */
   render() {
@@ -251,9 +418,9 @@ class BulkFarmTab extends Component {
     leftCol.appendChild(this.renderSettingsCard());
     wrapper.appendChild(leftCol);
 
-    // Right Column - Progress & Actions
+    // Right Column - Farm Status (real-time)
     const rightCol = this.createElement('div', { className: 'bulk-farm-right-column' });
-    rightCol.appendChild(this.renderProgressCard());
+    rightCol.appendChild(this.renderFarmStatusCard());
     rightCol.appendChild(this.renderActions());
     wrapper.appendChild(rightCol);
 
@@ -307,7 +474,11 @@ class BulkFarmTab extends Component {
       accounts.forEach(account => {
         const isConnected = account.status === 'connected';
         const isSelected = this.state.selectedAccounts.has(account.accountId);
-        const isFarming = account.farmStatus && account.farmStatus.isRunning;
+
+        // Get real-time farm status for this account
+        const farmStatus = this.state.farmStatuses.find(s => s.accountId === account.accountId);
+        const isFarming = farmStatus && farmStatus.isFarming;
+        const isLoop = farmStatus && farmStatus.isRunning && !farmStatus.isPaused;
 
         const item = this.createElement('div', {
           className: `bulk-farm-account-item ${isSelected ? 'selected' : ''} ${!isConnected ? 'disabled' : ''}`,
@@ -330,7 +501,10 @@ class BulkFarmTab extends Component {
         let statusText = isConnected ? 'Online' : 'Offline';
         if (isFarming) {
           statusClass = 'farming';
-          statusText = 'Farmol';
+          statusText = '🚜 Farmol';
+        } else if (isLoop) {
+          statusClass = 'loop';
+          statusText = '🔄 Loop';
         }
 
         const status = this.createElement('span', {
@@ -417,123 +591,118 @@ class BulkFarmTab extends Component {
   }
 
   /**
-   * Render progress card
+   * Generate summary HTML
    */
-  renderProgressCard() {
-    const op = this.state.operation;
-    const hasOp = op && op.hasOperation;
-    const statusClass = hasOp ? (op.status === 'running' ? 'running' : op.status === 'complete' ? 'complete' : '') : '';
+  renderSummaryHTML() {
+    const summary = this.state.farmSummary || { total: 0, running: 0, farming: 0, paused: 0, idle: 0 };
+    return `
+      <div class="bulk-farm-summary-item farming">
+        <span class="bulk-farm-summary-icon">🚜</span>
+        <span class="bulk-farm-summary-value">${summary.farming}</span>
+        <span class="bulk-farm-summary-label">Farmol</span>
+      </div>
+      <div class="bulk-farm-summary-item loop">
+        <span class="bulk-farm-summary-icon">🔄</span>
+        <span class="bulk-farm-summary-value">${summary.running}</span>
+        <span class="bulk-farm-summary-label">Loop</span>
+      </div>
+      <div class="bulk-farm-summary-item paused">
+        <span class="bulk-farm-summary-icon">⏸️</span>
+        <span class="bulk-farm-summary-value">${summary.paused}</span>
+        <span class="bulk-farm-summary-label">Szunet</span>
+      </div>
+      <div class="bulk-farm-summary-item idle">
+        <span class="bulk-farm-summary-icon">⏹️</span>
+        <span class="bulk-farm-summary-value">${summary.idle}</span>
+        <span class="bulk-farm-summary-label">Inaktiv</span>
+      </div>
+    `;
+  }
 
-    const card = this.createElement('div', { className: `bulk-farm-card bulk-farm-progress-card ${statusClass}` });
+  /**
+   * Render status items into container
+   */
+  renderStatusItems(container) {
+    const statuses = this.state.farmStatuses || [];
+
+    if (statuses.length === 0) {
+      const empty = this.createElement('div', { className: 'bulk-farm-status-empty' });
+      empty.innerHTML = '<div class="bulk-farm-idle-icon">🚜</div><div>Nincs csatlakozott fiok</div>';
+      container.appendChild(empty);
+      return;
+    }
+
+    statuses.forEach(status => {
+      const stateInfo = this.getFarmStateInfo(status);
+
+      const row = this.createElement('div', {
+        className: `bulk-farm-status-row ${stateInfo.class}`
+      });
+
+      // Icon
+      const iconEl = this.createElement('span', { className: 'bulk-farm-status-icon' }, stateInfo.icon);
+      row.appendChild(iconEl);
+
+      // Account name
+      const nameEl = this.createElement('span', { className: 'bulk-farm-status-name' }, status.playerName);
+      row.appendChild(nameEl);
+
+      // State text
+      const stateEl = this.createElement('span', { className: 'bulk-farm-status-state' }, stateInfo.text);
+      row.appendChild(stateEl);
+
+      // Detail (progress or next run time)
+      const detailEl = this.createElement('span', { className: 'bulk-farm-status-detail' }, stateInfo.detail);
+      row.appendChild(detailEl);
+
+      // Stats (if has farmed)
+      if (status.totalFarmed > 0) {
+        const statsEl = this.createElement('span', {
+          className: 'bulk-farm-status-stats',
+          title: `Loop: ${status.loopCount}x, Farmolva: ${status.totalFarmed}`
+        }, `#${status.loopCount}`);
+        row.appendChild(statsEl);
+      }
+
+      container.appendChild(row);
+    });
+  }
+
+  /**
+   * Render real-time farm status card
+   */
+  renderFarmStatusCard() {
+    const card = this.createElement('div', { className: 'bulk-farm-card bulk-farm-status-card' });
 
     // Header
     const header = this.createElement('div', { className: 'bulk-farm-card-header' });
-    header.appendChild(this.createElement('div', { className: 'bulk-farm-card-title' }, 'Statusz'));
+    header.appendChild(this.createElement('div', { className: 'bulk-farm-card-title' }, 'Farm Statusz'));
 
-    if (hasOp) {
-      const statusText = op.status === 'running' ? 'Fut' :
-                         op.status === 'complete' ? 'Kesz' :
-                         op.status === 'stopped' ? 'Leallitva' : 'Varakozik';
-      const badge = this.createElement('div', {
-        className: `bulk-farm-status-badge ${op.status === 'running' ? 'running' : ''}`
-      }, statusText);
-      header.appendChild(badge);
-    }
+    // Live indicator
+    const liveIndicator = this.createElement('div', { className: 'bulk-farm-live-indicator' });
+    liveIndicator.innerHTML = '<span class="bulk-farm-live-dot"></span> Elo';
+    header.appendChild(liveIndicator);
+
     card.appendChild(header);
 
     // Body
     const body = this.createElement('div', { className: 'bulk-farm-card-body' });
 
-    if (!hasOp) {
-      // Idle state
-      const idle = this.createElement('div', { className: 'bulk-farm-idle-state' });
-      idle.innerHTML = `
-        <div class="bulk-farm-idle-icon">🚜</div>
-        <div class="bulk-farm-idle-text">Nincs aktiv muvelet</div>
-        <div class="bulk-farm-idle-hint">Valaszd ki a fiokokat es kattints az "Inditas" gombra</div>
-      `;
-      body.appendChild(idle);
-    } else {
-      const progress = op.progress || { total: 0, started: 0, failed: 0, remaining: 0 };
-      const done = progress.started + progress.failed;
-      const percent = progress.total > 0 ? Math.round((done / progress.total) * 100) : 0;
+    // Summary row
+    const summary = this.createElement('div', {
+      id: 'bulk-farm-summary',
+      className: 'bulk-farm-summary'
+    });
+    summary.innerHTML = this.renderSummaryHTML();
+    body.appendChild(summary);
 
-      // Progress bar
-      const barContainer = this.createElement('div', { className: 'bulk-farm-progress-bar-container' });
-      const bar = this.createElement('div', { className: 'bulk-farm-progress-bar' });
-      const fill = this.createElement('div', {
-        className: 'bulk-farm-progress-fill',
-        style: { width: `${Math.max(percent, 8)}%` }
-      });
-      const text = this.createElement('span', { className: 'bulk-farm-progress-text' }, `${done} / ${progress.total}`);
-      fill.appendChild(text);
-      bar.appendChild(fill);
-      barContainer.appendChild(bar);
-      body.appendChild(barContainer);
-
-      // Stats row
-      const statsRow = this.createElement('div', { className: 'bulk-farm-stats-row' });
-
-      const startedStat = this.createElement('div', { className: 'bulk-farm-stat' });
-      startedStat.innerHTML = `
-        <div class="bulk-farm-stat-value success">${progress.started}</div>
-        <div class="bulk-farm-stat-label">Elinditva</div>
-      `;
-      statsRow.appendChild(startedStat);
-
-      const failedStat = this.createElement('div', { className: 'bulk-farm-stat' });
-      failedStat.innerHTML = `
-        <div class="bulk-farm-stat-value error">${progress.failed}</div>
-        <div class="bulk-farm-stat-label">Sikertelen</div>
-      `;
-      statsRow.appendChild(failedStat);
-
-      const remainingStat = this.createElement('div', { className: 'bulk-farm-stat' });
-      remainingStat.innerHTML = `
-        <div class="bulk-farm-stat-value pending">${progress.remaining}</div>
-        <div class="bulk-farm-stat-label">Varakozik</div>
-      `;
-      statsRow.appendChild(remainingStat);
-
-      body.appendChild(statsRow);
-
-      // Status list
-      if ((op.started && op.started.length > 0) || (op.failed && op.failed.length > 0) || (op.queue && op.queue.length > 0)) {
-        const statusList = this.createElement('div', { className: 'bulk-farm-status-list' });
-
-        (op.started || []).forEach(item => {
-          const row = this.createElement('div', { className: 'bulk-farm-status-item' });
-          row.innerHTML = `
-            <span class="bulk-farm-status-icon success">✓</span>
-            <span class="bulk-farm-status-account">${item.accountId}</span>
-            <span class="bulk-farm-status-info">${item.settings.intervalMinutes}p, +-${item.settings.randomDelayMinutes}p</span>
-          `;
-          statusList.appendChild(row);
-        });
-
-        (op.failed || []).forEach(item => {
-          const row = this.createElement('div', { className: 'bulk-farm-status-item' });
-          row.innerHTML = `
-            <span class="bulk-farm-status-icon error">✗</span>
-            <span class="bulk-farm-status-account">${item.accountId}</span>
-            <span class="bulk-farm-status-info">${item.error}</span>
-          `;
-          statusList.appendChild(row);
-        });
-
-        (op.queue || []).forEach(accountId => {
-          const row = this.createElement('div', { className: 'bulk-farm-status-item' });
-          row.innerHTML = `
-            <span class="bulk-farm-status-icon queued">⏳</span>
-            <span class="bulk-farm-status-account">${accountId}</span>
-            <span class="bulk-farm-status-info">Varakozik...</span>
-          `;
-          statusList.appendChild(row);
-        });
-
-        body.appendChild(statusList);
-      }
-    }
+    // Status list
+    const statusList = this.createElement('div', {
+      id: 'bulk-farm-status-list',
+      className: 'bulk-farm-status-list'
+    });
+    this.renderStatusItems(statusList);
+    body.appendChild(statusList);
 
     card.appendChild(body);
     return card;
@@ -545,19 +714,20 @@ class BulkFarmTab extends Component {
   renderActions() {
     const section = this.createElement('div', { className: 'bulk-farm-actions' });
 
-    const isRunning = this.state.operation && this.state.operation.status === 'running';
+    const summary = this.state.farmSummary || { running: 0 };
+    const hasRunning = summary.running > 0 || summary.farming > 0;
 
     const startBtn = document.createElement('button');
     startBtn.className = 'bulk-farm-btn bulk-farm-btn-start';
     startBtn.textContent = 'Inditas';
-    startBtn.disabled = this.state.isLoading || isRunning || this.state.selectedAccounts.size === 0;
+    startBtn.disabled = this.state.isLoading || this.state.selectedAccounts.size === 0;
     startBtn.addEventListener('click', this.handleStartAll);
     section.appendChild(startBtn);
 
     const stopBtn = document.createElement('button');
     stopBtn.className = 'bulk-farm-btn bulk-farm-btn-stop';
     stopBtn.textContent = 'Leallitas';
-    stopBtn.disabled = this.state.isLoading || !isRunning;
+    stopBtn.disabled = this.state.isLoading || !hasRunning;
     stopBtn.addEventListener('click', this.handleStopAll);
     section.appendChild(stopBtn);
 

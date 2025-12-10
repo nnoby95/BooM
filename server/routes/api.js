@@ -273,4 +273,47 @@ router.post('/commands/refresh', (req, res) => {
   });
 });
 
+/**
+ * POST /api/commands/open-tab
+ * Open a specific tab (building, troops, etc.) for an account
+ */
+router.post('/commands/open-tab', (req, res) => {
+  const { accountId, tabType } = req.body;
+
+  if (!accountId || !tabType) {
+    return res.status(400).json({
+      success: false,
+      error: 'accountId and tabType are required'
+    });
+  }
+
+  // Valid tab types
+  const validTabTypes = ['building', 'troops', 'overview'];
+  if (!validTabTypes.includes(tabType)) {
+    return res.status(400).json({
+      success: false,
+      error: `Invalid tabType. Must be one of: ${validTabTypes.join(', ')}`
+    });
+  }
+
+  // Import openTabForAccount dynamically to avoid circular dependency
+  const { openTabForAccount } = require('../websocket');
+
+  const success = openTabForAccount(accountId, tabType);
+
+  if (!success) {
+    return res.status(404).json({
+      success: false,
+      error: 'Account not connected or no master tab available'
+    });
+  }
+
+  logger.info('Open tab command sent', { accountId, tabType });
+
+  res.json({
+    success: true,
+    message: `Opening ${tabType} tab for ${accountId}`
+  });
+});
+
 module.exports = router;

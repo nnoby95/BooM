@@ -1,0 +1,228 @@
+/* Building Tab Styles - TW Controller Dashboard */
+
+/* Buildings Section */
+.buildings-section {
+  background: linear-gradient(to bottom, rgba(139, 90, 43, 0.1), rgba(101, 67, 33, 0.15));
+  border-radius: 6px;
+  padding: 0;
+}
+
+/* Buildings List - Row Format */
+.buildings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+/* Building Row */
+.building-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.building-row:hover {
+  background: rgba(139, 90, 43, 0.25);
+}
+
+.building-row-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.building-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.building-row-name {
+  font-size: 12px;
+  color: #3E2723;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* Upgrade Button */
+.building-upgrade-btn {
+  background: linear-gradient(to bottom, #4CAF50, #388E3C);
+  color: #fff;
+  border: 1px solid #2E7D32;
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.building-upgrade-btn:hover {
+  background: linear-gradient(to bottom, #66BB6A, #4CAF50);
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+}
+
+.building-upgrade-btn:active {
+  transform: scale(0.95);
+}
+
+/* Max Badge */
+.building-max-badge {
+  background: linear-gradient(to bottom, #2E7D32, #1B5E20);
+  color: #A5D6A7;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+/* Cannot Build */
+.building-cant-build {
+  color: #666;
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+/* Building Queue Section */
+.building-queue-section {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.3);
+}
+
+.building-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(210, 105, 30, 0.15);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  border-left: 3px solid #D2691E;
+}
+
+.building-queue-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.building-queue-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.building-queue-name {
+  font-size: 11px;
+  color: #D2B48C;
+  font-weight: 500;
+}
+
+.building-queue-timer {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  color: #FFD39B;
+  background: rgba(139, 90, 43, 0.4);
+  padding: 2px 8px;
+  border-radius: 3px;
+  min-width: 70px;
+  text-align: center;
+}
+
+/* Building Update Time */
+.building-update-time {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(139, 90, 43, 0.2);
+  font-size: 10px;
+  color: #8D6E63;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Simple Section Header */
+.building-queue-section .simple-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  margin-bottom: 6px;
+}
+
+.building-queue-section .simple-section-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #D2B48C;
+}
+
+.building-queue-section .simple-section-subtitle {
+  font-size: 10px;
+  color: #8D6E63;
+  font-style: italic;
+}
+
+/* Legacy Grid Styles (kept for compatibility) */
+.buildings-grid.detailed {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.building-item.detailed {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  border: 1px solid rgba(139, 90, 43, 0.3);
+  transition: all 0.2s ease;
+}
+
+.building-item.detailed:hover {
+  background: rgba(139, 90, 43, 0.3);
+  border-color: rgba(210, 180, 140, 0.5);
+  transform: scale(1.05);
+}
+
+.building-item.detailed.can-build {
+  border-color: rgba(76, 175, 80, 0.5);
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+}
+
+.building-item.detailed .building-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.building-item.detailed .building-level {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: linear-gradient(to bottom, #5D4037, #3E2723);
+  color: #FFD39B;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 3px;
+  min-width: 14px;
+  text-align: center;
+  border: 1px solid rgba(255, 211, 155, 0.3);
+}
+
+.building-item.detailed .building-level.max {
+  background: linear-gradient(to bottom, #2E7D32, #1B5E20);
+  color: #A5D6A7;
+  border-color: rgba(76, 175, 80, 0.5);
+}

@@ -179,6 +179,26 @@ function handleMessage(ws, message, context, updateContext) {
       handleFarmDebug(ws, message, context);
       break;
 
+    // Troops Tab operations
+    case 'troopReport':
+      handleTroopReport(ws, message, context);
+      break;
+
+    // Building Tab operations
+    case 'buildingReport':
+      handleBuildingReport(ws, message, context);
+      break;
+
+    // Tab management
+    case 'tabOpened':
+      handleTabOpened(ws, message, context);
+      break;
+
+    // Command forwarding (dashboard → userscript)
+    case 'recruitTroops':
+      handleRecruitTroops(ws, message);
+      break;
+
     default:
       logger.warn('Unknown message type', { type, accountId: context.accountId });
       ws.send(JSON.stringify({
@@ -971,11 +991,198 @@ function handleFarmDebug(ws, message, context) {
   debugLog.addLog(context.accountId, 'farmDebug', debugMessage, { actionId, ...data });
 }
 
+/**
+ * Handle troop report from Troops Tab
+ * Stores detailed troop data (troops, queue, canRecruit) for dashboard display
+ */
+function handleTroopReport(ws, message, context) {
+  if (!context.accountId) {
+    logger.warn('TroopReport from unregistered connection');
+    return;
+  }
+
+  const { troops, queue, canRecruit } = message;
+
+  // Store in account data
+  const troopDetails = {
+    troops: troops || {},
+    queue: queue || { barracks: [], stable: [], garage: [] },
+    canRecruit: canRecruit || {},
+    lastUpdate: Date.now()
+  };
+
+  // Update account state
+  accountState.updateData(context.accountId, { troopDetails });
+
+  logger.debug(`TroopReport received from ${context.accountId}`, {
+    troopCount: Object.keys(troops || {}).length,
+    queueItems: (queue?.barracks?.length || 0) + (queue?.stable?.length || 0) + (queue?.garage?.length || 0)
+  });
+
+  // Broadcast to dashboards
+  broadcastToDashboards('troopUpdate', {
+    accountId: context.accountId,
+    troopDetails
+  });
+
+  // Log to debug log
+  debugLog.addLog(context.accountId, 'troopReport', 'Troop data received', {
+    troopCount: Object.keys(troops || {}).length
+  });
+}
+
+/**
+ * Handle tabOpened confirmation from userscript
+ */
+function handleTabOpened(ws, message, context) {
+  if (!context.accountId) {
+    logger.warn('TabOpened from unregistered connection');
+    return;
+  }
+
+  const { tabType, screen, url } = message;
+
+  logger.info('Tab opened', {
+    accountId: context.accountId,
+    tabType,
+    screen,
+    url
+  });
+
+  // Broadcast to dashboards
+  broadcastToDashboards('tabOpened', {
+    accountId: context.accountId,
+    tabType,
+    screen,
+    url
+  });
+
+  // Log to debug log
+  debugLog.addLog(context.accountId, 'tabOpened', `Opened ${tabType || screen} tab`, { url });
+}
+
+/**
+ * Open a specific tab for an account (called from dashboard/API)
+ * @param {string} accountId - The account ID
+ * @param {string} tabType - Type of tab: 'building', 'troops', 'overview'
+ * @returns {boolean} Success
+ */
+function openTabForAccount(accountId, tabType) {
+  const account = accounts.get(accountId);
+  if (!account || !account.ws) {
+    logger.warn('Cannot open tab: account not connected', { accountId, tabType });
+    return false;
+  }
+
+  // Find master connection for this account
+  const masterConn = account.ws;
+
+  logger.info('Sending openTab command', { accountId, tabType });
+
+  masterConn.send(JSON.stringify({
+    type: 'openTab',
+    tabType
+  }));
+
+  return true;
+}
+
+/**
+ * Handle building report from Building Tab
+ * Stores detailed building data (buildings, buildQueue, queueSlots) for dashboard display
+ */
+function handleBuildingReport(ws, message, context) {
+  if (!context.accountId) {
+    logger.warn('BuildingReport from unregistered connection');
+    return;
+  }
+
+  const { buildings, buildQueue, queueSlots } = message;
+
+  // Store in account data
+  const buildingDetails = {
+    buildings: buildings || {},
+    buildQueue: buildQueue || [],
+    queueSlots: queueSlots || { used: 0, max: 2 },
+    lastUpdate: Date.now()
+  };
+
+  // Update account state
+  accountState.updateData(context.accountId, { buildingDetails });
+
+  logger.info('BuildingReport received', {
+    accountId: context.accountId,
+    buildingCount: Object.keys(buildings || {}).length,
+    queueItems: buildQueue?.length || 0
+  });
+
+  // Broadcast to dashboards
+  broadcastToDashboards('buildingUpdate', {
+    accountId: context.accountId,
+    buildingDetails
+  });
+
+  // Log to debug log
+  debugLog.addLog(context.accountId, 'buildingReport', 'Building data received', {
+    buildingCount: Object.keys(buildings || {}).length,
+    queueItems: buildQueue?.length || 0
+  });
+}
+
+/**
+ * Handle recruitTroops command from dashboard
+ * Forwards the command to the account's userscript
+ */
+function handleRecruitTroops(ws, message) {
+  const { accountId, building, units, actionId } = message;
+
+  if (!accountId) {
+    logger.warn('RecruitTroops without accountId');
+    ws.send(JSON.stringify({
+      type: 'error',
+      error: 'Missing accountId for recruitTroops'
+    }));
+    return;
+  }
+
+  logger.info('RecruitTroops command received', {
+    accountId,
+    building,
+    units,
+    actionId
+  });
+
+  // Log to debug log
+  debugLog.addLog(accountId, 'recruitTroops', `Recruiting in ${building}`, {
+    units,
+    actionId
+  });
+
+  // Forward to userscript
+  const sent = sendToAccount(accountId, {
+    type: 'recruitTroops',
+    building,
+    units,
+    actionId
+  });
+
+  if (!sent) {
+    logger.warn('Failed to send recruitTroops - account not connected', { accountId });
+    ws.send(JSON.stringify({
+      type: 'commandResult',
+      actionId,
+      success: false,
+      message: 'Account not connected or no master tab available'
+    }));
+  }
+}
+
 module.exports = {
   initWebSocket,
   CONFIG,
   sendToAccount,
   getAccountById,
   getAccounts,
-  debugLog
+  debugLog,
+  openTabForAccount
 };

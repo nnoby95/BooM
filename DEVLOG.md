@@ -1,6 +1,12 @@
 # Development Log
 
 ## Completed Tasks
+- [2025-12-10] Template System Removed (ON HOLD)
+  - Removed template files: templates.js, templateExecutor.js
+  - Removed template script from index.html
+  - Template system needs rethinking - logic was not correct
+  - Historical Phase 4 entries kept for reference below
+  - Note: Farm Bot template A/B/C selector is DIFFERENT and kept
 - [2025-12-04] Project initialized - Created DEVLOG.md structure
 - [2025-12-04] Phase 1 Foundation - Server infrastructure complete
   - Created server directory structure (routes, state, utils, public)
@@ -463,6 +469,82 @@
   - Updated to version 1.4.0
   - Deployed to Linode server
   - **USER CONFIRMED**: Feature navigation working!
+
+- [2025-12-10] Building Tab Implementation (v1.6.0) ✅
+  - **USER REQUEST**: Implement Building Tab similar to Troops Tab
+  - **IMPLEMENTED**:
+    - **Userscript (Phase 1)**:
+      - `isBuildingTab` flag and `buildingReportTimer`
+      - `isMainBuildingPage()` detection for `screen=main`
+      - `scrapeBuildingPageData()` - extracts from `BuildingMain.buildings` + build queue
+      - `sendBuildingReport()`, `startBuildingReporting()`, `stopBuildingReporting()`
+      - Status badge with orange/brown "BUILDING TAB" style
+    - **Server (Phase 2)**:
+      - `handleBuildingReport()` in websocket.js
+      - Stores data in `account.data.buildingDetails`
+      - Broadcasts `buildingUpdate` to dashboards
+    - **Dashboard (Phase 3)**:
+      - Collapsible Buildings section with TW main building icon
+      - Building grid with TW icons and level badges
+      - Build queue with countdown timers
+      - Upgradeable buildings section showing costs
+      - Created `building.css` with TW theme styling
+    - **Auto-Open Tabs (Phase 4)**:
+      - `handleOpenTab()` command handler in userscript
+      - `/api/commands/open-tab` endpoint
+      - `openTabForAccount()` utility in websocket.js
+  - **Files Created**:
+    - `server/public/css/building.css` - Building section styling
+  - **Files Modified**:
+    - `userscript/tw-agent.user.js` - Building tab detection and scraping
+    - `server/websocket.js` - Building report handler, open-tab handler
+    - `server/routes/api.js` - open-tab endpoint
+    - `server/public/js/components/DetailPanel.js` - Buildings section UI
+    - `server/public/index.html` - building.css include
+  - Deployed to Linode server
+
+- [2025-12-10] Troop Recruitment Fix ✅
+  - **BUG**: Clicking recruit button in dashboard did nothing
+  - **ROOT CAUSE**: websocket.js had no handler for `recruitTroops` message type
+    - Fell through to default case, logged "Unknown message type"
+  - **FIX**: Added `handleRecruitTroops()` function in websocket.js
+    - Routes `recruitTroops` command to userscript via `sendToAccount()`
+  - Deployed and restarted PM2
+
+- [2025-12-10] Incoming Attacks Detection & Display ✅
+  - **USER REQUEST**: Detect incoming attacks from DOM and display in dashboard
+  - **IMPLEMENTED**:
+    - **Userscript**: Updated `scrapeIncomings()` to return object format:
+      ```js
+      { attacks: number, supports: number, hasIncomingCell: boolean }
+      ```
+      - Uses `#incomings_amount` and `#supports_amount` DOM elements
+    - **Detail Panel**: Updated `createCommandsSection()` in DetailPanel.js
+      - Shows TW attack icon from `dshu.innogamescdn.com`
+      - "Bejövő támadások:" label with count badge
+      - Green badge (no attacks) / Red pulsing badge (has attacks)
+    - **Account Cards**: Added `createIncomingAttacksRow()` in AccountCard.js
+      - Always shows incoming count (0 or actual count)
+      - TW attack icon, "Bejövő:" label, count badge
+      - Card gets `has-alert` class when attacks > 0 (glowing border)
+    - **CSS Styling**:
+      - `cards.css`: `.card-incoming-attacks`, `.card-attack-count.has-attacks` with pulse animation
+      - `components.css`: `.incoming-attacks-row`, `.incoming-attack-count` styles
+  - Deployed all files to Linode server
+
+- [2025-12-10] Incoming Attacks Memory System ✅
+  - **BUG**: Incoming attacks count flickering (shows count, then 0, then count again)
+  - **ROOT CAUSE**: Dynamic DOM updates temporarily report 0 attacks
+  - **FIX**: Added server-side memory system in `accounts.js`
+    - `account.incomingsMemory = { attacks, lastHighTime }`
+    - When new count < current count, checks if memory expired
+    - Memory duration: **3 minutes (180000ms)**
+    - If memory active: keeps higher value
+    - If memory expired: allows decrease
+  - **Logic**:
+    - Count increases → update immediately, refresh memory timer
+    - Count decreases → only allow if 3+ minutes since last high count
+  - Deployed and restarted PM2
 
 ## Current State
 Phase 2, 3, 4 & 5 - Account Display + Modals + Templates + Alerts/Logs/Settings (COMPLETE AND DEPLOYED)

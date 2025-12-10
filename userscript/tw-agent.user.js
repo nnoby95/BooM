@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TW Controller Agent
 // @namespace    tw-controller
-// @version      1.5.8
+// @version      1.6.2
 // @description  Tribal Wars account control agent
 // @author       TW Controller
 // @match        https://*.tribalwars.*/game.php*
@@ -290,6 +290,10 @@
   let reportTimer = null;
   let isConnected = false;
   let isMasterTab = false;  // Track if this tab is the master (active) tab
+  let isTroopsTab = false;  // Track if this tab is dedicated to troop monitoring
+  let troopsReportTimer = null;  // Timer for periodic troop reports
+  let isBuildingTab = false;  // Track if this tab is dedicated to building monitoring
+  let buildingReportTimer = null;  // Timer for periodic building reports
 
   // ============ MASTER TAB PERSISTENCE ============
   // Use sessionStorage to persist master status across page navigations
@@ -680,6 +684,68 @@
         background: #888;
       }
 
+      .tw-agent-status-dot.troops {
+        background: #2196F3;
+        box-shadow: 0 0 6px #2196F3;
+        animation: tw-agent-pulse-troops 2s ease-in-out infinite;
+      }
+
+      /* Troops badge - blue glow */
+      .tw-agent-troops-badge {
+        background: linear-gradient(to bottom, #1565C0, #0D47A1) !important;
+        border: 1px solid #2196F3 !important;
+        box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
+        border-radius: 3px;
+        margin-right: 3px !important;
+      }
+
+      .tw-agent-troops-badge a,
+      .tw-agent-troops-badge span {
+        color: #90CAF9 !important;
+        font-weight: bold;
+        text-shadow: 0 0 3px rgba(33, 150, 243, 0.8);
+        padding: 2px 8px !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      @keyframes tw-agent-pulse-troops {
+        0%, 100% { opacity: 1; box-shadow: 0 0 6px #2196F3; }
+        50% { opacity: 0.7; box-shadow: 0 0 12px #2196F3; }
+      }
+
+      /* Building badge - orange/brown glow (matches TW theme) */
+      .tw-agent-building-badge {
+        background: linear-gradient(to bottom, #8B4513, #5D2906) !important;
+        border: 1px solid #D2691E !important;
+        box-shadow: 0 0 8px rgba(210, 105, 30, 0.6);
+        border-radius: 3px;
+        margin-right: 3px !important;
+      }
+
+      .tw-agent-building-badge a,
+      .tw-agent-building-badge span {
+        color: #FFD39B !important;
+        font-weight: bold;
+        text-shadow: 0 0 3px rgba(210, 105, 30, 0.8);
+        padding: 2px 8px !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .tw-agent-status-dot.building {
+        background: #D2691E;
+        box-shadow: 0 0 6px #D2691E;
+        animation: tw-agent-pulse-building 2s ease-in-out infinite;
+      }
+
+      @keyframes tw-agent-pulse-building {
+        0%, 100% { opacity: 1; box-shadow: 0 0 6px #D2691E; }
+        50% { opacity: 0.7; box-shadow: 0 0 12px #D2691E; }
+      }
+
       @keyframes tw-agent-pulse {
         0%, 100% { opacity: 1; box-shadow: 0 0 6px #4caf50; }
         50% { opacity: 0.7; box-shadow: 0 0 12px #4caf50; }
@@ -900,15 +966,34 @@
    * Create status bar elements for custom bar
    */
   function createStatusBarElements(graphicBase, baseUrl) {
-    // Status Badge
+    // Status Badge - determine badge type: BUILDING > TROOPS > MASTER > STANDBY
+    let badgeClass, dotClass, badgeText;
+    if (isBuildingTab) {
+      badgeClass = 'tw-agent-building-badge';
+      dotClass = 'building';
+      badgeText = 'BUILDING TAB';
+    } else if (isTroopsTab) {
+      badgeClass = 'tw-agent-troops-badge';
+      dotClass = 'troops';
+      badgeText = 'TROOPS TAB';
+    } else if (isMasterTab) {
+      badgeClass = 'tw-agent-master-badge';
+      dotClass = 'master';
+      badgeText = 'MASTER';
+    } else {
+      badgeClass = 'tw-agent-standby-badge';
+      dotClass = 'standby';
+      badgeText = 'STANDBY';
+    }
+
     const statusBadge = document.createElement('div');
-    statusBadge.className = `tw-agent-status-item ${isMasterTab ? 'tw-agent-master-badge' : 'tw-agent-standby-badge'}`;
+    statusBadge.className = `tw-agent-status-item ${badgeClass}`;
     statusBadge.id = 'tw-agent-status-badge';
 
     const statusDot = document.createElement('span');
-    statusDot.className = `tw-agent-status-dot ${isMasterTab ? 'master' : 'standby'}`;
+    statusDot.className = `tw-agent-status-dot ${dotClass}`;
     statusBadge.appendChild(statusDot);
-    statusBadge.appendChild(document.createTextNode(isMasterTab ? 'MASTER' : 'STANDBY'));
+    statusBadge.appendChild(document.createTextNode(badgeText));
 
     // Nav items
     const navConfig = [
@@ -934,6 +1019,23 @@
 
       return navItem;
     });
+
+    // Troops Tab button - opens training page in new tab
+    const troopsBtn = document.createElement('a');
+    troopsBtn.href = baseUrl + 'train&mode=train';
+    troopsBtn.className = 'tw-agent-nav-link tw-agent-troops-btn';
+    troopsBtn.title = 'Csapatok tab megnyitása (új ablak)';
+    troopsBtn.target = '_blank';  // Open in new tab
+
+    const troopsImg = document.createElement('img');
+    troopsImg.src = graphicBase + 'unit/unit_spear.png';
+    troopsBtn.appendChild(troopsImg);
+
+    const troopsText = document.createElement('span');
+    troopsText.textContent = 'Csapatok';
+    troopsBtn.appendChild(troopsText);
+
+    navItemElements.push(troopsBtn);
 
     // Refresh button
     const refreshBtn = document.createElement('a');
@@ -1084,7 +1186,7 @@
   }
 
   /**
-   * Update browser tab title with MASTER/STANDBY prefix
+   * Update browser tab title with MASTER/STANDBY/TROOPS/BUILDING prefix
    */
   let originalTitle = null;
 
@@ -1094,13 +1196,29 @@
       originalTitle = document.title;
     }
 
-    // Remove any existing prefix
-    let baseTitle = originalTitle;
-    if (baseTitle.startsWith('[MASTER] ') || baseTitle.startsWith('[STANDBY] ')) {
-      baseTitle = baseTitle.replace(/^\[(MASTER|STANDBY)\] /, '');
+    // For Building Tab: use simple "Buildings - VillageName" format
+    if (isBuildingTab) {
+      const villageName = unsafeWindow.game_data?.village?.name || 'Village';
+      document.title = `Buildings - ${villageName}`;
+      log(`Tab title updated: ${document.title}`);
+      return;
     }
 
-    // Add new prefix
+    // For Troops Tab: use simple "Troops - VillageName" format
+    if (isTroopsTab) {
+      const villageName = unsafeWindow.game_data?.village?.name || 'Village';
+      document.title = `Troops - ${villageName}`;
+      log(`Tab title updated: ${document.title}`);
+      return;
+    }
+
+    // Remove any existing prefix
+    let baseTitle = originalTitle;
+    if (baseTitle.startsWith('[MASTER] ') || baseTitle.startsWith('[STANDBY] ') || baseTitle.startsWith('[TROOPS] ') || baseTitle.startsWith('[BUILDING] ')) {
+      baseTitle = baseTitle.replace(/^\[(MASTER|STANDBY|TROOPS|BUILDING)\] /, '');
+    }
+
+    // Add prefix for MASTER/STANDBY
     const prefix = isMasterTab ? '[MASTER]' : '[STANDBY]';
     document.title = `${prefix} ${baseTitle}`;
 
@@ -1285,9 +1403,75 @@
         handleStartFarm(message);
         break;
 
+      case 'openTab':
+        handleOpenTab(message);
+        break;
+
       default:
         log('Unknown message type:', message.type);
     }
+  }
+
+  /**
+   * Handle openTab command - opens a new browser tab to specified screen
+   * Used by dashboard to open missing Building/Troops tabs
+   */
+  function handleOpenTab(message) {
+    const { tabType, screen } = message;
+    log(`Opening new tab: ${tabType || screen}`);
+
+    // Only master tab should open new tabs to avoid duplicates
+    if (!isMasterTab) {
+      log('Not master tab, ignoring openTab command');
+      return;
+    }
+
+    // Get base URL for the current game
+    const villageId = unsafeWindow.game_data?.village?.id;
+    if (!villageId) {
+      error('Cannot open tab: village ID not found');
+      return;
+    }
+
+    let targetScreen = screen;
+
+    // Map tabType to screen if provided
+    if (tabType) {
+      switch (tabType) {
+        case 'building':
+          targetScreen = 'main';
+          break;
+        case 'troops':
+          targetScreen = 'train&mode=train';
+          break;
+        case 'overview':
+          targetScreen = 'overview';
+          break;
+        default:
+          targetScreen = tabType;
+      }
+    }
+
+    if (!targetScreen) {
+      error('No screen specified for openTab');
+      return;
+    }
+
+    // Build the URL
+    const baseUrl = `/game.php?village=${villageId}&screen=`;
+    const fullUrl = window.location.origin + baseUrl + targetScreen;
+
+    log(`Opening tab URL: ${fullUrl}`);
+
+    // Open in new tab
+    window.open(fullUrl, '_blank');
+
+    // Report back that tab was opened
+    send('tabOpened', {
+      tabType: tabType || targetScreen,
+      screen: targetScreen,
+      url: fullUrl
+    });
   }
 
   function handleRegistered(message) {
@@ -1301,11 +1485,33 @@
     log(`Tab role: ${isMasterTab ? 'MASTER' : 'STANDBY'}`);
     log(`Total connections: ${message.connectionCount || 1}`);
 
+    // Detect if this is a Troops Tab (on training page)
+    isTroopsTab = isTrainingPage();
+    if (isTroopsTab) {
+      log('TROOPS TAB detected - will report troop data');
+    }
+
+    // Detect if this is a Building Tab (on main building page)
+    isBuildingTab = isMainBuildingPage();
+    if (isBuildingTab) {
+      log('BUILDING TAB detected - will report building data');
+    }
+
     // Inject quickbar status
     injectQuickbarStatus();
 
     // Update browser tab title
     updateTabTitle();
+
+    // Troops Tab: start troop reporting regardless of master status
+    if (isTroopsTab) {
+      startTroopReporting();
+    }
+
+    // Building Tab: start building reporting regardless of master status
+    if (isBuildingTab) {
+      startBuildingReporting();
+    }
 
     // Only master tab does periodic reporting
     if (isMasterTab) {
@@ -2375,33 +2581,330 @@
         }
       }
 
-      // Method 3: Fallback - return empty (manual import available in dashboard)
-      log('No troops found - returning empty object');
-      return {};
+      // Method 3: Fallback - return null to preserve existing data on server
+      log('No troops found on this page - returning null to preserve existing data');
+      return null;
     } catch (err) {
       error('Failed to scrape troops:', err);
-      return {};
+      return null;
+    }
+  }
+
+  // ============ TROOPS TAB FUNCTIONS ============
+
+  /**
+   * Check if current page is the training page (screen=train&mode=train)
+   */
+  function isTrainingPage() {
+    const url = window.location.href;
+    return url.includes('screen=train') && url.includes('mode=train');
+  }
+
+  /**
+   * Check if current page is the main building page (screen=main)
+   */
+  function isMainBuildingPage() {
+    const url = window.location.href;
+    return url.includes('screen=main') && !url.includes('mode=');
+  }
+
+  /**
+   * Scrape detailed troop data from training page
+   * Returns: { troops, queue, canRecruit }
+   */
+  function scrapeTrainingPageTroops() {
+    try {
+      if (!isTrainingPage()) {
+        return null;
+      }
+
+      const result = {
+        troops: {},
+        queue: { barracks: [], stable: [], garage: [] },
+        canRecruit: {}
+      };
+
+      const unitTypes = ['spear', 'sword', 'axe', 'archer', 'spy', 'light', 'marcher', 'heavy', 'ram', 'catapult', 'knight', 'snob'];
+
+      // Scrape troops from "A faluban/összesen" column
+      unitTypes.forEach(unitType => {
+        const row = document.querySelector(`a.unit_link[data-unit="${unitType}"]`);
+        if (row) {
+          const tr = row.closest('tr');
+          if (tr) {
+            // Find the cell with "X/Y" format (inVillage/total)
+            const cells = tr.querySelectorAll('td');
+            cells.forEach(cell => {
+              const text = cell.textContent.trim();
+              const match = text.match(/^(\d+)\s*\/\s*(\d+)$/);
+              if (match) {
+                result.troops[unitType] = {
+                  inVillage: parseInt(match[1]) || 0,
+                  total: parseInt(match[2]) || 0
+                };
+              }
+            });
+
+            // Find canRecruit from (XX) link
+            const maxLink = tr.querySelector(`a[id$="_0_a"]`);
+            if (maxLink) {
+              const maxMatch = maxLink.textContent.match(/\((\d+)\)/);
+              if (maxMatch) {
+                result.canRecruit[unitType] = parseInt(maxMatch[1]) || 0;
+              }
+            }
+          }
+        }
+      });
+
+      // Scrape training queues
+      ['barracks', 'stable', 'garage'].forEach(building => {
+        const queueTable = document.querySelector(`#trainqueue_wrap_${building}`);
+        if (queueTable) {
+          const rows = queueTable.querySelectorAll('tr.lit, tr.sortable_row');
+          rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 2) {
+              // First cell has unit sprite and count
+              const firstCell = cells[0];
+              const unitSprite = firstCell.querySelector('.unit_sprite');
+              if (unitSprite) {
+                // Extract unit type from class (e.g., "unit_sprite unit_sprite_smaller axe")
+                const classes = unitSprite.className.split(' ');
+                const unitType = classes.find(c => unitTypes.includes(c));
+
+                // Extract count from text (e.g., "99 Bárdos")
+                const cellText = firstCell.textContent.trim();
+                const countMatch = cellText.match(/(\d+)/);
+                const count = countMatch ? parseInt(countMatch[1]) : 0;
+
+                // Second cell has timer
+                const timerCell = cells[1];
+                const timer = timerCell.querySelector('.timer');
+                const remaining = timer ? timer.textContent.trim() : '';
+
+                // Third cell has completion time
+                const completesAt = cells[2] ? cells[2].textContent.trim() : '';
+
+                if (unitType && count > 0) {
+                  result.queue[building].push({
+                    unit: unitType,
+                    count,
+                    remaining,
+                    completesAt
+                  });
+                }
+              }
+            }
+          });
+        }
+      });
+
+      log('Training page troops scraped:', result);
+      return result;
+    } catch (err) {
+      error('Failed to scrape training page troops:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Send troop report to server (for Troops Tab)
+   */
+  function sendTroopReport() {
+    if (!isConnected || !isTroopsTab) return;
+
+    const troopData = scrapeTrainingPageTroops();
+    if (troopData) {
+      send('troopReport', {
+        accountId: scrapeAccountInfo()?.accountId,
+        ...troopData
+      });
+      log('Troop report sent');
+    }
+  }
+
+  /**
+   * Start periodic troop reporting (every 30 seconds)
+   */
+  function startTroopReporting() {
+    if (troopsReportTimer) {
+      clearInterval(troopsReportTimer);
+    }
+
+    // Send initial report
+    sendTroopReport();
+
+    // Set up periodic reporting
+    troopsReportTimer = setInterval(sendTroopReport, 30000);
+    log('Troop reporting started (every 30s)');
+  }
+
+  /**
+   * Stop troop reporting
+   */
+  function stopTroopReporting() {
+    if (troopsReportTimer) {
+      clearInterval(troopsReportTimer);
+      troopsReportTimer = null;
+      log('Troop reporting stopped');
+    }
+  }
+
+  // ============ BUILDING TAB FUNCTIONS ============
+
+  /**
+   * Scrape building data from main building page
+   * Uses BuildingMain.buildings JS variable from the game
+   */
+  function scrapeBuildingPageData() {
+    try {
+      if (!isMainBuildingPage()) {
+        return null;
+      }
+
+      const result = {
+        buildings: {},
+        buildQueue: [],
+        queueSlots: { used: 0, max: 2 }
+      };
+
+      // Method 1: Get buildings from BuildingMain.buildings JS variable
+      if (unsafeWindow.BuildingMain && unsafeWindow.BuildingMain.buildings) {
+        const buildings = unsafeWindow.BuildingMain.buildings;
+
+        Object.keys(buildings).forEach(buildingId => {
+          const b = buildings[buildingId];
+          // canBuild = true ONLY if requirements met AND no error (have resources NOW)
+          // b.can_build = requirements met, b.error = null means have resources
+          const canBuildNow = b.can_build === true && (b.error === null || b.error === undefined);
+          result.buildings[buildingId] = {
+            level: parseInt(b.level) || 0,
+            maxLevel: b.max_level || 30,
+            canBuild: canBuildNow,
+            wood: b.wood || 0,
+            stone: b.stone || 0,
+            iron: b.iron || 0,
+            pop: b.pop || 0,
+            buildTime: b.build_time || 0,
+            error: b.error || null,
+            forecast: b.forecast || null,
+            name: b.name || buildingId
+          };
+        });
+      }
+
+      // Method 2: Scrape build queue from #build_queue table
+      const queueTable = document.querySelector('#build_queue tbody');
+      if (queueTable) {
+        // Select all rows with buildorder_ class (any building type)
+        const rows = queueTable.querySelectorAll('tr[class*="buildorder_"]');
+        rows.forEach(row => {
+          // Get building type from class (buildorder_XXX)
+          const buildingClass = Array.from(row.classList).find(c => c.startsWith('buildorder_'));
+          const building = buildingClass ? buildingClass.replace('buildorder_', '') : null;
+
+          // Get timer endtime
+          const timer = row.querySelector('.timer');
+          const endtime = timer ? parseInt(timer.dataset.endtime) : null;
+
+          // Get target level from text (e.g., "25. szint")
+          const levelMatch = row.textContent.match(/(\d+)\.\s*szint/);
+          const targetLevel = levelMatch ? parseInt(levelMatch[1]) : null;
+
+          if (building && endtime) {
+            result.buildQueue.push({
+              building,
+              targetLevel,
+              finishTime: endtime * 1000, // Convert to milliseconds
+              remaining: timer ? timer.textContent.trim() : ''
+            });
+          }
+        });
+
+        result.queueSlots.used = result.buildQueue.length;
+      }
+
+      // Also check BuildingMain.order_count for queue slots
+      if (unsafeWindow.BuildingMain && typeof unsafeWindow.BuildingMain.order_count !== 'undefined') {
+        result.queueSlots.used = unsafeWindow.BuildingMain.order_count;
+      }
+
+      log('Building page data scraped:', result);
+      return result;
+    } catch (err) {
+      error('Failed to scrape building page data:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Send building report to server (for Building Tab)
+   */
+  function sendBuildingReport() {
+    if (!isConnected || !isBuildingTab) return;
+
+    const buildingData = scrapeBuildingPageData();
+    if (buildingData) {
+      send('buildingReport', {
+        accountId: scrapeAccountInfo()?.accountId,
+        ...buildingData
+      });
+      log('Building report sent');
+    }
+  }
+
+  /**
+   * Start periodic building reporting (every 30 seconds)
+   */
+  function startBuildingReporting() {
+    if (buildingReportTimer) {
+      clearInterval(buildingReportTimer);
+    }
+
+    // Send initial report
+    sendBuildingReport();
+
+    // Set up periodic reporting
+    buildingReportTimer = setInterval(sendBuildingReport, 30000);
+    log('Building reporting started (every 30s)');
+  }
+
+  /**
+   * Stop building reporting
+   */
+  function stopBuildingReporting() {
+    if (buildingReportTimer) {
+      clearInterval(buildingReportTimer);
+      buildingReportTimer = null;
+      log('Building reporting stopped');
     }
   }
 
   function scrapeIncomings() {
     try {
-      // NEW v1.0.23: Use WebSocket for detailed command data
-      // Only scrape COUNTS from DOM for verification
+      // Check if #incomings_cell exists in DOM - if not, no incoming attacks
+      const incomingsCell = document.querySelector('#incomings_cell');
       const incomingAttacksEl = document.querySelector('#incomings_amount');
-      const incomingSupportsEl = document.querySelector('#supports_amount');
 
+      // If the cell doesn't exist or #incomings_amount doesn't exist, no attacks
       const attackCount = incomingAttacksEl ? parseInt(incomingAttacksEl.textContent) || 0 : 0;
+
+      // Also check for incoming supports
+      const incomingSupportsEl = document.querySelector('#supports_amount');
       const supportCount = incomingSupportsEl ? parseInt(incomingSupportsEl.textContent) || 0 : 0;
 
       log(`Incoming counts - Attacks: ${attackCount}, Supports: ${supportCount}`);
 
-      // Return empty array - WebSocket handles individual command details
-      // This is just for dashboard count verification
-      return [];
+      // Return object with counts for dashboard display
+      return {
+        attacks: attackCount,
+        supports: supportCount,
+        hasIncomingCell: !!incomingsCell
+      };
     } catch (err) {
       error('Failed to scrape incoming counts:', err);
-      return [];
+      return { attacks: 0, supports: 0, hasIncomingCell: false };
     }
   }
 
@@ -3433,7 +3936,7 @@
 
   function init() {
     log('TW Controller Agent starting...');
-    log('Version: 1.5.8 - Treat 0/0 progress as empty run (success) not stall');
+    log('Version: 1.6.0 - Troops Tab for dedicated troop monitoring');
     log('Server:', CONFIG.serverUrl);
     log('URL:', window.location.href);
     log('Hostname:', window.location.hostname);

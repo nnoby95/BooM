@@ -1,17 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push:*)",
-      "Bash(git pull:*)",
-      "Bash(git stash:*)",
       "Bash(scp:*)",
-      "Bash(ssh:*)",
-      "Bash(curl:*)",
-      "Bash(certutil:*)",
-      "Bash(ls:*)",
-      "Bash(dir:*)",
-      "Bash(git add:*)",
-      "Bash(git reset:*)"
+      "Bash(ssh root@172.236.201.97 \"pm2 restart tw-controller && sleep 2 && pm2 status\")",
+      "Bash(ssh root@172.236.201.97 \"grep -c ''openTabForAccount'' /root/tw-controller/websocket.js && grep -c ''open-tab'' /root/tw-controller/routes/api.js && grep -c ''createBuildingsSection'' /root/tw-controller/public/js/components/DetailPanel.js && ls -la /root/tw-controller/public/css/building.css && grep -c ''building.css'' /root/tw-controller/public/index.html\")",
+      "Bash(ssh root@172.236.201.97:*)"
     ],
     "deny": [],
     "ask": []
